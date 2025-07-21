@@ -7,6 +7,12 @@
             background: #000;
             color: white;
             padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-section {
+            margin-bottom: 40px;
+            border: 1px solid #444;
+            padding: 20px;
         }
         .test-grid {
             display: grid;
@@ -24,47 +30,80 @@
             border: 2px solid #fff;
             margin: 0 auto 10px;
         }
+        h2 {
+            color: #4CAF50;
+        }
+        .error {
+            color: #ff6b6b;
+        }
     </style>
 </head>
 <body>
-    <h1>Vercel Image Test</h1>
-    <div class="test-grid">
-        <div class="test-item">
-            <div class="test-image" style="background-image: url('/FriendGPT-3.jpg');"></div>
-            <p>FriendGPT-3.jpg</p>
-        </div>
-        <div class="test-item">
-            <div class="test-image" style="background-image: url('/naincy-pelosi.jpg');"></div>
-            <p>naincy-pelosi.jpg</p>
-        </div>
-        <div class="test-item">
-            <div class="test-image" style="background-image: url('/cryptoexpert.jpeg');"></div>
-            <p>cryptoexpert.jpeg</p>
-        </div>
-        <div class="test-item">
-            <div class="test-image" style="background-image: url('/waifu-anime.jpg');"></div>
-            <p>waifu-anime.jpg</p>
-        </div>
-        <div class="test-item">
-            <div class="test-image" style="background-image: url('/jennieGPT.jpg');"></div>
-            <p>jennieGPT.jpg</p>
-        </div>
-        <div class="test-item">
-            <div class="test-image" style="background-image: url('/scarlett.png');"></div>
-            <p>scarlett.png</p>
+    <h1>Vercel Image Path Testing</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Relative Paths (no slash)</h2>
+        <div class="test-grid">
+            <div class="test-item">
+                <div class="test-image" style="background-image: url('FriendGPT-3.jpg');"></div>
+                <p>url('FriendGPT-3.jpg')</p>
+            </div>
+            <div class="test-item">
+                <div class="test-image" style="background-image: url('naincy-pelosi.jpg');"></div>
+                <p>url('naincy-pelosi.jpg')</p>
+            </div>
+            <div class="test-item">
+                <img src="cryptoexpert.jpeg" width="150" height="150" alt="Crypto">
+                <p>&lt;img src="cryptoexpert.jpeg"&gt;</p>
+            </div>
         </div>
     </div>
     
-    <h2>Direct IMG Tags Test</h2>
-    <div class="test-grid">
-        <div class="test-item">
-            <img src="/FriendGPT-3.jpg" width="150" height="150" alt="FriendGPT">
-            <p>IMG: FriendGPT-3.jpg</p>
+    <div class="test-section">
+        <h2>Test 2: Relative Paths with ./</h2>
+        <div class="test-grid">
+            <div class="test-item">
+                <div class="test-image" style="background-image: url('./waifu-anime.jpg');"></div>
+                <p>url('./waifu-anime.jpg')</p>
+            </div>
+            <div class="test-item">
+                <img src="./jennieGPT.jpg" width="150" height="150" alt="Jennie">
+                <p>&lt;img src="./jennieGPT.jpg"&gt;</p>
+            </div>
         </div>
-        <div class="test-item">
-            <img src="/naincy-pelosi.jpg" width="150" height="150" alt="Naincy">
-            <p>IMG: naincy-pelosi.jpg</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Absolute Paths (with /)</h2>
+        <div class="test-grid">
+            <div class="test-item">
+                <div class="test-image" style="background-image: url('/scarlett.png');"></div>
+                <p>url('/scarlett.png')</p>
+            </div>
+            <div class="test-item">
+                <img src="/dev-matrix.png" width="150" height="150" alt="Dev">
+                <p>&lt;img src="/dev-matrix.png"&gt;</p>
+            </div>
         </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>All Available Images</h2>
+        <ul style="text-align: left;">
+            <li>FriendGPT-3.jpg</li>
+            <li>naincy-pelosi.jpg</li>
+            <li>cryptoexpert.jpeg</li>
+            <li>waifu-anime.jpg</li>
+            <li>jennieGPT.jpg</li>
+            <li>coacharnieGPT.jpg</li>
+            <li>scarlett.png</li>
+            <li>dev-matrix.png</li>
+            <li>lunaGPT.png</li>
+            <li>chef-marco.png</li>
+            <li>alex-explorer.png</li>
+            <li>melody-rivers.png</li>
+            <li>sage-wisdom.png</li>
+        </ul>
     </div>
 </body>
 </html>
