@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Debug</title>
+    <style>
+        body { background: #111; color: #fff; font-family: monospace; padding: 20px; }
+        .test { margin: 20px 0; padding: 20px; border: 1px solid #333; }
+        img { max-width: 100px; height: auto; border: 2px solid green; }
+        .failed { border-color: red; }
+        .bg-test { width: 100px; height: 100px; border: 2px solid yellow; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Vercel Image Loading Debug</h1>
+    
+    <div class="test">
+        <h2>Test 1: Direct IMG tags</h2>
+        <p>Image with relative path: <img src="FriendGPT-3.jpg" alt="test1" onerror="this.classList.add('failed')" /></p>
+        <p>Image with ./ path: <img src="./FriendGPT-3.jpg" alt="test2" onerror="this.classList.add('failed')" /></p>
+        <p>Image with / path: <img src="/FriendGPT-3.jpg" alt="test3" onerror="this.classList.add('failed')" /></p>
+    </div>
+
+    <div class="test">
+        <h2>Test 2: Background Images</h2>
+        <div class="bg-test" style="background-image: url('FriendGPT-3.jpg'); background-size: cover;"></div>
+        <div class="bg-test" style="background-image: url('./FriendGPT-3.jpg'); background-size: cover;"></div>
+        <div class="bg-test" style="background-image: url('/FriendGPT-3.jpg'); background-size: cover;"></div>
+    </div>
+
+    <div class="test">
+        <h2>Test 3: JavaScript Image Loading</h2>
+        <div id="js-results"></div>
+    </div>
+
+    <script>
+        const paths = [
+            'FriendGPT-3.jpg',
+            './FriendGPT-3.jpg',
+            '/FriendGPT-3.jpg',
+            'public/images/FriendGPT-3.jpg',
+            './public/images/FriendGPT-3.jpg',
+            '/public/images/FriendGPT-3.jpg'
+        ];
+
+        const results = document.getElementById('js-results');
+        
+        paths.forEach(path => {
+            const img = new Image();
+            const result = document.createElement('p');
+            
+            img.onload = () => {
+                result.innerHTML = `✅ SUCCESS: ${path}`;
+                result.style.color = '#4CAF50';
+            };
+            
+            img.onerror = () => {
+                result.innerHTML = `❌ FAILED: ${path}`;
+                result.style.color = '#f44336';
+            };
+            
+            img.src = path;
+            results.appendChild(result);
+        });
+
+        // Also log current location info
+        const info = document.createElement('div');
+        info.style.marginTop = '20px';
+        info.style.padding = '10px';
+        info.style.background = '#222';
+        info.innerHTML = `
+            <h3>Environment Info:</h3>
+            <p>Current URL: ${window.location.href}</p>
+            <p>Origin: ${window.location.origin}</p>
+            <p>Pathname: ${window.location.pathname}</p>
+        `;
+        results.appendChild(info);
+    </script>
+</body>
+</html>
