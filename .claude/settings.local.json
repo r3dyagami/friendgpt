@@ -21,7 +21,9 @@
       "Bash(git checkout:*)",
       "Bash(rm:*)",
       "Bash(mv:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }
