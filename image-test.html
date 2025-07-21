@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Test</title>
+    <style>
+        body {
+            background: #000;
+            color: white;
+            padding: 20px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .test-item {
+            text-align: center;
+        }
+        .test-image {
+            width: 150px;
+            height: 150px;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #fff;
+            margin: 0 auto 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vercel Image Test</h1>
+    <div class="test-grid">
+        <div class="test-item">
+            <div class="test-image" style="background-image: url('/FriendGPT-3.jpg');"></div>
+            <p>FriendGPT-3.jpg</p>
+        </div>
+        <div class="test-item">
+            <div class="test-image" style="background-image: url('/naincy-pelosi.jpg');"></div>
+            <p>naincy-pelosi.jpg</p>
+        </div>
+        <div class="test-item">
+            <div class="test-image" style="background-image: url('/cryptoexpert.jpeg');"></div>
+            <p>cryptoexpert.jpeg</p>
+        </div>
+        <div class="test-item">
+            <div class="test-image" style="background-image: url('/waifu-anime.jpg');"></div>
+            <p>waifu-anime.jpg</p>
+        </div>
+        <div class="test-item">
+            <div class="test-image" style="background-image: url('/jennieGPT.jpg');"></div>
+            <p>jennieGPT.jpg</p>
+        </div>
+        <div class="test-item">
+            <div class="test-image" style="background-image: url('/scarlett.png');"></div>
+            <p>scarlett.png</p>
+        </div>
+    </div>
+    
+    <h2>Direct IMG Tags Test</h2>
+    <div class="test-grid">
+        <div class="test-item">
+            <img src="/FriendGPT-3.jpg" width="150" height="150" alt="FriendGPT">
+            <p>IMG: FriendGPT-3.jpg</p>
+        </div>
+        <div class="test-item">
+            <img src="/naincy-pelosi.jpg" width="150" height="150" alt="Naincy">
+            <p>IMG: naincy-pelosi.jpg</p>
+        </div>
+    </div>
+</body>
+</html>
