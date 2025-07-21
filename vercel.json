@@ -1,0 +1,18 @@
+{
+  "functions": {
+    "friendgpt-backend/server.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/friendgpt-backend/server.js"
+    }
+  ],
+  "env": {
+    "STRIPE_PUBLISHABLE_KEY": "@stripe_publishable_key",
+    "OPENAI_API_KEY": "@openai_api_key",
+    "BACKEND_URL": "https://your-vercel-app.vercel.app"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm start)",
+      "Bash(curl:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git push:*)",
+      "Bash(open:*)",
+      "Bash(python3:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npx vercel:*)",
+      "Bash(sudo chown:*)",
+      "Bash(gh:*)",
+      "Bash(cp:*)",
+      "Bash(true)",
+      "Bash(git checkout:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": []
+  }
+}

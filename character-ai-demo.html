@@ -1,0 +1,3952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FriendGPT</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="config.js"></script>
+    <script src="config.local.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 428px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #000000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #000000;
+            padding: 16px 20px;
+            border-bottom: 1px solid #00ff88;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .header-left {
+            flex: 1;
+        }
+
+        .header-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .credits {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000000;
+            padding: 6px 16px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .credits:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.5);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .credits-plus {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #000000;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .credits-plus:hover {
+            background: rgba(0, 0, 0, 0.4);
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .settings-btn {
+            background: #1a1a1a;
+            border: 1px solid #00ff88;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #00ff88;
+            font-size: 18px;
+        }
+
+        .settings-btn:hover {
+            background: #00ff88;
+            color: #000000;
+            transform: rotate(90deg);
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header-logo {
+            width: 48px;
+            height: 48px;
+            background-image: url('./FriendGPT-3.jpg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .header-subtitle {
+            font-size: 16px;
+            color: #888888;
+            margin-top: 4px;
+        }
+
+        .character-browser {
+            padding: 20px;
+            flex: 1;
+            overflow-x: hidden;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 16px;
+        }
+
+        .character-grid {
+            display: flex;
+            overflow-x: auto;
+            gap: 16px;
+            padding-bottom: 10px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding-right: 20px;
+            scroll-behavior: smooth;
+        }
+        
+        .character-grid::-webkit-scrollbar {
+            display: none;
+        }
+
+        .character-card,
+        .character-card.plus-card,
+        .character-card.placeholder-card,
+        .character-card.preview-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+            width: 160px !important;
+            min-width: 160px !important;
+            max-width: 160px !important;
+        }
+
+        .character-card:hover {
+            border-color: #00ff88;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4), 0 0 10px rgba(0, 255, 136, 0.3);
+            animation: glow-pulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow-pulse {
+            0% {
+                box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4), 0 0 10px rgba(0, 255, 136, 0.3);
+            }
+            100% {
+                box-shadow: 0 4px 15px rgba(0, 255, 136, 0.6), 0 0 15px rgba(0, 255, 136, 0.4);
+            }
+        }
+
+        .character-avatar {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #000000;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .character-info {
+            padding: 12px;
+        }
+
+        .character-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .character-creator {
+            font-size: 12px;
+            color: #888888;
+            margin-bottom: 8px;
+        }
+
+        .character-interactions {
+            font-size: 12px;
+            color: #888888;
+        }
+        
+        .character-description {
+            font-size: 11px;
+            color: #aaaaaa;
+            margin-top: 4px;
+            line-height: 1.3;
+        }
+
+        .chat-container {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .chat-header {
+            background: #000000;
+            padding: 16px 20px;
+            border-bottom: 1px solid #00ff88;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .chat-character-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #000000;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message.character {
+            display: flex;
+            gap: 12px;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+            flex-shrink: 0;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000000;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .message.character .message-bubble {
+            background: #1a1a1a;
+            color: #ffffff;
+            border-bottom-left-radius: 6px;
+            border: 1px solid #00ff88;
+        }
+
+        .message.gift-sent {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .message.gift-sent .message-bubble {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000000;
+            border-radius: 50px;
+            padding: 12px 20px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message.gift-sent .message-bubble::before {
+            content: "🎁";
+            font-size: 16px;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .typing-bubble {
+            background: #1a1a1a;
+            border-radius: 18px;
+            padding: 12px 16px;
+            border: 1px solid #00ff88;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #888888;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: scale(1); opacity: 0.7; }
+            30% { transform: scale(1.2); opacity: 1; }
+        }
+
+        .chat-input {
+            background: #000000;
+            border-top: 1px solid #00ff88;
+            padding: 16px 20px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #00ff88;
+            border-radius: 25px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-size: 16px;
+            outline: none;
+            resize: none;
+            min-height: 44px;
+        }
+
+        .input-field::placeholder {
+            color: #888888;
+        }
+
+        .input-field:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000000;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 2px 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .welcome-message {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid #00ff88;
+        }
+
+        .welcome-message h3 {
+            color: #00ff88;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .api-status {
+            background: #4ade80;
+            color: #1a1a1a;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-content {
+            background: #000000;
+            border: 1px solid #00ff88;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .settings-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .settings-section {
+            margin-bottom: 24px;
+        }
+
+        .section-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .toggle-label {
+            font-size: 14px;
+            color: #ffffff;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #333333;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #00ff88;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(26px);
+        }
+
+        .language-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .language-btn {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .language-btn:hover {
+            border-color: #00ff88;
+        }
+
+        .language-btn.active {
+            background: #00ff88;
+            color: #000000;
+            border-color: #00ff88;
+        }
+
+        .dark-mode {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .light-mode {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .light-mode .header,
+        .light-mode .character-browser,
+        .light-mode .settings-content {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .light-mode .header {
+            border-bottom: 1px solid #00aa66;
+        }
+
+        .light-mode .character-card {
+            background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+            color: #000000;
+        }
+
+        .light-mode .character-card:hover {
+            border-color: #00aa66;
+        }
+
+        .light-mode .character-name {
+            color: #000000;
+        }
+
+        .light-mode .character-creator {
+            color: #666666;
+        }
+
+        .light-mode .character-interactions {
+            color: #666666;
+        }
+
+        .light-mode .character-description {
+            color: #333333;
+        }
+
+        .light-mode .section-title {
+            color: #000000;
+        }
+
+        .light-mode .header-title {
+            color: #000000;
+        }
+
+        .light-mode .header-subtitle {
+            color: #666666;
+        }
+
+        .light-mode .settings-btn {
+            background: #f0f0f0;
+            border-color: #00aa66;
+            color: #00aa66;
+        }
+
+        .light-mode .settings-btn:hover {
+            background: #00aa66;
+            color: #ffffff;
+        }
+
+        .light-mode .settings-content {
+            background: #ffffff;
+            border-color: #00aa66;
+        }
+
+        .light-mode .settings-title {
+            color: #000000;
+        }
+
+        .light-mode .section-label {
+            color: #000000;
+        }
+
+        .light-mode .toggle-container {
+            background: #f0f0f0;
+        }
+
+        .light-mode .toggle-label {
+            color: #000000;
+        }
+
+        .light-mode .language-btn {
+            background: #f0f0f0;
+            border-color: #cccccc;
+            color: #000000;
+        }
+
+        .light-mode .language-btn:hover {
+            border-color: #00aa66;
+        }
+
+        .light-mode .language-btn.active {
+            background: #00aa66;
+            color: #ffffff;
+            border-color: #00aa66;
+        }
+
+        .light-mode .close-btn {
+            color: #000000;
+        }
+
+        /* Character Creator Styles */
+        .creator-grid {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding-bottom: 10px;
+        }
+        
+        .creator-grid-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 16px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            flex: 1;
+        }
+        
+        .creator-grid-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .plus-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border: 2px dashed #00ff88;
+            transition: all 0.3s ease;
+            width: 160px !important;
+            min-width: 160px !important;
+            max-width: 160px;
+            flex-shrink: 0;
+        }
+
+        .plus-card:hover {
+            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            border-color: #00ff88;
+            border-style: solid;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .plus-avatar {
+            background: linear-gradient(135deg, #333333 0%, #444444 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .plus-icon {
+            font-size: 48px;
+            color: #00ff88;
+            font-weight: 300;
+        }
+
+        .placeholder-card {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            border: 2px solid #333333;
+            opacity: 0.6;
+            cursor: not-allowed;
+            width: 160px !important;
+            min-width: 160px !important;
+            max-width: 160px;
+            flex-shrink: 0;
+        }
+
+        .placeholder-card:hover {
+            border-color: #333333;
+            box-shadow: none;
+            animation: none;
+        }
+
+        .placeholder-avatar {
+            background: linear-gradient(135deg, #222222 0%, #333333 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .placeholder-icon {
+            font-size: 48px;
+            color: #555555;
+            font-weight: 300;
+        }
+
+        .placeholder-text {
+            color: #555555 !important;
+        }
+
+        /* Creator Modal Styles */
+        .creator-modal-content {
+            max-width: 800px;
+            width: 95%;
+        }
+
+        .creator-form-container {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .creator-form-left {
+            flex: 2;
+            min-width: 300px;
+        }
+
+        .creator-form-right {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #00ff88;
+            margin-bottom: 16px;
+        }
+
+        .preview-card {
+            pointer-events: none;
+            border: 2px solid #00ff88;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+            width: 160px !important;
+            min-width: 160px !important;
+            max-width: 160px;
+            flex-shrink: 0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            background: #000000;
+            border: 2px solid #333333;
+            border-radius: 8px;
+            padding: 12px;
+            color: #ffffff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: #888888;
+        }
+
+        .personality-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+        }
+
+        .personality-btn {
+            background: #1a1a1a;
+            border: 2px solid #333333;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 10px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .personality-btn:hover {
+            border-color: #00ff88;
+            background: #2a2a2a;
+        }
+
+        .personality-btn.active {
+            background: #00ff88;
+            border-color: #00ff88;
+            color: #000000;
+        }
+
+        .image-upload-container {
+            position: relative;
+        }
+
+        .image-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 120px;
+            border: 2px dashed #333333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000000;
+            transition: all 0.3s ease;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .image-preview:hover {
+            border-color: #00ff88;
+            background-color: #111111;
+        }
+
+        .upload-text {
+            color: #888888;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .image-preview.has-image .upload-text {
+            display: none;
+        }
+
+        .avatar-placeholder {
+            font-size: 48px;
+            color: #333333;
+        }
+
+        .create-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000000;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .create-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .create-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Light Mode Styles for Character Creator */
+        .light-mode .plus-card {
+            background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+            border-color: #00aa66;
+        }
+
+        .light-mode .plus-card:hover {
+            background: linear-gradient(135deg, #e8e8e8 0%, #d8d8d8 100%);
+            border-color: #00aa66;
+            box-shadow: 0 4px 15px rgba(0, 170, 102, 0.4);
+        }
+
+        .light-mode .plus-avatar {
+            background: linear-gradient(135deg, #cccccc 0%, #bbbbbb 100%);
+        }
+
+        .light-mode .plus-icon {
+            color: #00aa66;
+        }
+
+        .light-mode .placeholder-card {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            border-color: #cccccc;
+        }
+
+        .light-mode .placeholder-card:hover {
+            border-color: #cccccc;
+        }
+
+        .light-mode .placeholder-avatar {
+            background: linear-gradient(135deg, #dddddd 0%, #cccccc 100%);
+        }
+
+        .light-mode .placeholder-icon {
+            color: #aaaaaa;
+        }
+
+        .light-mode .placeholder-text {
+            color: #aaaaaa !important;
+        }
+
+        .light-mode .form-label {
+            color: #000000;
+        }
+
+        .light-mode .form-input, 
+        .light-mode .form-textarea {
+            background: #ffffff;
+            border-color: #cccccc;
+            color: #000000;
+        }
+
+        .light-mode .form-input:focus, 
+        .light-mode .form-textarea:focus {
+            border-color: #00aa66;
+            box-shadow: 0 0 0 3px rgba(0, 170, 102, 0.1);
+        }
+
+        .light-mode .form-input::placeholder, 
+        .light-mode .form-textarea::placeholder {
+            color: #666666;
+        }
+
+        .light-mode .personality-btn {
+            background: #ffffff;
+            border-color: #cccccc;
+            color: #000000;
+        }
+
+        .light-mode .personality-btn:hover {
+            border-color: #00aa66;
+            background: #f9f9f9;
+        }
+
+        .light-mode .personality-btn.active {
+            background: #00aa66;
+            border-color: #00aa66;
+            color: #ffffff;
+        }
+
+        .light-mode .image-preview {
+            background: #ffffff;
+            border-color: #cccccc;
+        }
+
+        .light-mode .image-preview:hover {
+            border-color: #00aa66;
+            background-color: #f9f9f9;
+        }
+
+        .light-mode .upload-text {
+            color: #666666;
+        }
+
+        .light-mode .preview-title {
+            color: #00aa66;
+        }
+
+        .light-mode .preview-card {
+            border-color: #00aa66;
+            box-shadow: 0 4px 15px rgba(0, 170, 102, 0.3);
+        }
+
+        .light-mode .create-btn {
+            background: linear-gradient(135deg, #00aa66 0%, #008855 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 170, 102, 0.3);
+        }
+
+        .light-mode .create-btn:hover {
+            box-shadow: 0 6px 20px rgba(0, 170, 102, 0.4);
+        }
+
+        .light-mode .avatar-placeholder {
+            color: #cccccc;
+        }
+
+        @media (max-width: 768px) {
+            .creator-form-container {
+                flex-direction: column;
+            }
+            
+            .creator-form-right {
+                align-self: center;
+            }
+            
+            .personality-buttons {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+        }
+
+        .light-mode .chat-container {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .light-mode .chat-header {
+            background: #ffffff;
+            border-bottom: 1px solid #00aa66;
+        }
+
+        .light-mode .chat-messages {
+            background: #ffffff;
+        }
+
+        .light-mode .message.character .message-bubble {
+            background: #f0f0f0;
+            color: #000000;
+            border: 1px solid #00aa66;
+        }
+
+        .light-mode .message.user .message-bubble {
+            background: linear-gradient(135deg, #00aa66 0%, #008855 100%);
+            color: #ffffff;
+        }
+
+        .light-mode .message.gift-sent .message-bubble {
+            background: linear-gradient(135deg, #00aa66 0%, #008855 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 170, 102, 0.4);
+        }
+
+        .light-mode .welcome-message {
+            background: #f0f0f0;
+            color: #000000;
+            border: 1px solid #00aa66;
+        }
+
+        .light-mode .welcome-message h3 {
+            color: #00aa66;
+        }
+
+        .light-mode .typing-bubble {
+            background: #f0f0f0;
+            border: 1px solid #00aa66;
+        }
+
+        .light-mode .chat-input {
+            background: #ffffff;
+            border-top: 1px solid #00aa66;
+        }
+
+        .light-mode .input-field {
+            background: #f0f0f0;
+            border: 1px solid #00aa66;
+            color: #000000;
+        }
+
+        .light-mode .input-field::placeholder {
+            color: #666666;
+        }
+
+        .light-mode .send-button {
+            background: linear-gradient(135deg, #00aa66 0%, #008855 100%);
+            color: #ffffff;
+        }
+
+        .light-mode .back-btn {
+            color: #000000;
+        }
+
+        .light-mode .chat-character-info h3 {
+            color: #000000;
+        }
+
+        .light-mode .chat-character-info p {
+            color: #666666;
+        }
+
+        .purchase-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .purchase-content {
+            background: #000000;
+            border: 1px solid #00ff88;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .purchase-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .purchase-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .purchase-options {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .purchase-option {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .purchase-option:hover {
+            border-color: #00ff88;
+            background: #2a2a2a;
+        }
+
+        .purchase-option.best-value {
+            border-color: #00ff88;
+            background: linear-gradient(135deg, #001a0d 0%, #003318 100%);
+        }
+
+        .purchase-option.best-value::before {
+            content: "Best Value";
+            position: absolute;
+            top: -8px;
+            left: 16px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000000;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .purchase-option {
+            position: relative;
+        }
+
+        .purchase-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .purchase-credits {
+            font-size: 18px;
+            font-weight: 700;
+            color: #00ff88;
+        }
+
+        .purchase-bonus {
+            font-size: 12px;
+            color: #888888;
+        }
+
+        .purchase-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .light-mode .purchase-content {
+            background: #ffffff;
+            border-color: #00aa66;
+        }
+
+        .light-mode .purchase-title {
+            color: #000000;
+        }
+
+        .light-mode .purchase-option {
+            background: #f0f0f0;
+            border-color: #cccccc;
+        }
+
+        .light-mode .purchase-option:hover {
+            border-color: #00aa66;
+            background: #e0e0e0;
+        }
+
+        .light-mode .purchase-option.best-value {
+            border-color: #00aa66;
+            background: linear-gradient(135deg, #f0fff0 0%, #e8f5e8 100%);
+        }
+
+        .light-mode .purchase-option.best-value::before {
+            background: linear-gradient(135deg, #00aa66 0%, #008855 100%);
+            color: #ffffff;
+        }
+
+        .light-mode .purchase-credits {
+            color: #00aa66;
+        }
+
+        .light-mode .purchase-bonus {
+            color: #666666;
+        }
+
+        .light-mode .purchase-price {
+            color: #000000;
+        }
+
+        .gift-btn {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000000;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .gift-btn:hover {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.5);
+        }
+
+        .gift-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gift-content {
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            border: 2px solid #00ff88;
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 420px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 255, 136, 0.2);
+        }
+
+        .gift-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .gift-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .gift-options {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .gift-option {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border: 2px solid #333333;
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gift-option:hover {
+            border-color: #00ff88;
+            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .gift-option.popular {
+            border-color: #00ff88;
+            background: linear-gradient(135deg, #0d1a0d 0%, #1a331a 100%);
+        }
+
+        .gift-option.popular::before {
+            content: "Popular";
+            position: absolute;
+            top: -8px;
+            left: 16px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000000;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .gift-option {
+            position: relative;
+        }
+
+        .gift-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .gift-emoji {
+            font-size: 24px;
+        }
+
+        .gift-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .gift-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .gift-description {
+            font-size: 12px;
+            color: #888888;
+        }
+
+        .gift-cost {
+            font-size: 18px;
+            font-weight: 700;
+            color: #00ff88;
+        }
+
+        .light-mode .gift-btn {
+            background: linear-gradient(135deg, #00aa66 0%, #008855 100%);
+            color: #ffffff;
+        }
+
+        .light-mode .gift-content {
+            background: #ffffff;
+            border-color: #00aa66;
+            box-shadow: 0 10px 30px rgba(0, 170, 102, 0.2);
+        }
+
+        .light-mode .gift-title {
+            color: #000000;
+        }
+
+        .light-mode .gift-option {
+            background: #f0f0f0;
+            border-color: #cccccc;
+        }
+
+        .light-mode .gift-option:hover {
+            border-color: #00aa66;
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .light-mode .gift-option.popular {
+            border-color: #00aa66;
+            background: linear-gradient(135deg, #f0fff0 0%, #e8f5e8 100%);
+        }
+
+        .light-mode .gift-name {
+            color: #000000;
+        }
+
+        .light-mode .gift-description {
+            color: #666666;
+        }
+
+        .light-mode .gift-cost {
+            color: #00aa66;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Browser View -->
+        <div id="browserView">
+            <div class="header">
+                <div class="header-top">
+                    <div class="header-left"></div>
+                    <div class="header-center">
+                        <div class="credits">
+                            ⚡ <span id="creditsCount">50</span> Energy
+                            <button class="credits-plus" onclick="openPurchaseModal()">+</button>
+                        </div>
+                    </div>
+                    <div class="header-right">
+                        <button class="settings-btn" onclick="openSettings()">⚙️</button>
+                    </div>
+                </div>
+                <h1 class="header-title">
+                    <div class="header-logo"></div>
+                    FriendGPT
+                </h1>
+                <p class="header-subtitle" data-translate="subtitle">Chat with friends you've always wanted</p>
+            </div>
+
+            <div class="character-browser">
+                <!-- Featured Characters -->
+                <div class="section">
+                    <h2 class="section-title">Featured</h2>
+                    <div class="character-grid">
+                        <div class="character-card" onclick="selectCharacter('stocks')">
+                            <div class="character-avatar" style="background-image: url('./naincy pelosi.jpg');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Naincy Pelosi</div>
+                                <div class="character-creator">by @naincytrades</div>
+                                <div class="character-interactions">203.1k interactions</div>
+                                <div class="character-description">📈 Capitol's elite trader | 💰 Insider access</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card" onclick="selectCharacter('crypto')">
+                            <div class="character-avatar" style="background-image: url('./cryptoexpert.jpeg');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Crypto Expert</div>
+                                <div class="character-creator">by @crypto_pro</div>
+                                <div class="character-interactions">145.2k interactions</div>
+                                <div class="character-description">₿ Web3 VC analyst | 🚀 DeFi specialist</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card" onclick="selectCharacter('waifu')">
+                            <div class="character-avatar" style="background-image: url('./waifu-anime.jpg');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Waifu</div>
+                                <div class="character-creator">by @caring_soul</div>
+                                <div class="character-interactions">892.4k interactions</div>
+                                <div class="character-description">💕 Caring companion | 🌸 Always here for you</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Popular Characters -->
+                <div class="section">
+                    <h2 class="section-title">Popular</h2>
+                    <div class="character-grid">
+                        <div class="character-card" onclick="selectCharacter('jennie')">
+                            <div class="character-avatar" style="background-image: url('./jennieGPT.jpg');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Jennie</div>
+                                <div class="character-creator">by @kpop_stan</div>
+                                <div class="character-interactions">567.8k interactions</div>
+                                <div class="character-description">🖤 Blackpink K-pop queen | ✨ Fashion icon</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card" onclick="selectCharacter('coach')">
+                            <div class="character-avatar" style="background-image: url('./coacharnieGPT.jpg');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Coach Arnie</div>
+                                <div class="character-creator">by @the_governator</div>
+                                <div class="character-interactions">750.2k interactions</div>
+                                <div class="character-description">🏆 Austrian Oak legend | 💪 Motivational coach</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card" onclick="selectCharacter('nsfw')">
+                            <div class="character-avatar" style="background-image: url('./scarlett.png');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Scarlett</div>
+                                <div class="character-creator">by @night_whispers</div>
+                                <div class="character-interactions">487.3k interactions</div>
+                                <div class="character-description">🌹 Intimate conversations | 🔥 Flirtatious expert</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card" onclick="selectCharacter('dev')">
+                            <div class="character-avatar" style="background-image: url('./dev-matrix.png');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Dev Matrix</div>
+                                <div class="character-creator">by @code_master</div>
+                                <div class="character-interactions">678.9k interactions</div>
+                                <div class="character-description">💻 Logical code wizard | 🐛 Debug specialist</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trending Characters -->
+                <div class="section">
+                    <h2 class="section-title">Trending</h2>
+                    <div class="character-grid">
+                        <div class="character-card" onclick="selectCharacter('luna')">
+                            <div class="character-avatar" style="background-image: url('./lunaGPT.png');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Luna Creative</div>
+                                <div class="character-creator">by @dreamy_artist</div>
+                                <div class="character-interactions">412.3k interactions</div>
+                                <div class="character-description">🎨 Whimsical artist | 🌙 Creative dreamer</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card" onclick="selectCharacter('chef')">
+                            <div class="character-avatar" style="background-image: url('./chef-marco.png');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Chef Marco</div>
+                                <div class="character-creator">by @culinary_fire</div>
+                                <div class="character-interactions">325.7k interactions</div>
+                                <div class="character-description">👨‍🍳 Bold culinary genius | 🔥 Passion specialist</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card" onclick="selectCharacter('explorer')">
+                            <div class="character-avatar" style="background-image: url('./alex-explorer.png');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Alex Explorer</div>
+                                <div class="character-creator">by @adventure_seeker</div>
+                                <div class="character-interactions">534.2k interactions</div>
+                                <div class="character-description">🧭 Curious adventurer | 🗺️ Discovery guide</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card" onclick="selectCharacter('melody')">
+                            <div class="character-avatar" style="background-image: url('./melody-rivers.png');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Melody Rivers</div>
+                                <div class="character-creator">by @rhythm_soul</div>
+                                <div class="character-interactions">456.8k interactions</div>
+                                <div class="character-description">🎵 Musical empath | 🎶 Emotional rhythm</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card" onclick="selectCharacter('philosopher')">
+                            <div class="character-avatar" style="background-image: url('./sage-wisdom.png');"></div>
+                            <div class="character-info">
+                                <div class="character-name">Dr. Sage Wisdom</div>
+                                <div class="character-creator">by @deep_thinker</div>
+                                <div class="character-interactions">389.1k interactions</div>
+                                <div class="character-description">🧠 Wise philosopher | 🤔 Deep thinker</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Create Character Section -->
+                <div class="section">
+                    <h2 class="section-title">Your Characters</h2>
+                    <div class="creator-grid">
+                        <!-- Plus Card (sticky) -->
+                        <div class="character-card plus-card" onclick="openCharacterCreator()">
+                            <div class="character-avatar plus-avatar">
+                                <span class="plus-icon">+</span>
+                            </div>
+                            <div class="character-info">
+                                <div class="character-name">Create Character</div>
+                                <div class="character-creator">by @you</div>
+                                <div class="character-interactions">Click to create</div>
+                                <div class="character-description">Design your own character</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Scrollable characters container -->
+                        <div class="creator-grid-scroll">
+                            <!-- Sample created character -->
+                            <div class="character-card" onclick="selectCharacter('sample')">
+                                <div class="character-avatar" style="background-image: url('./friendgpt-backend/assets/sample.jpg'); background: linear-gradient(135deg, #333 0%, #555 100%);"></div>
+                                <div class="character-info">
+                                    <div class="character-name">Sample Character</div>
+                                    <div class="character-creator">by @you</div>
+                                    <div class="character-interactions">0 interactions</div>
+                                    <div class="character-description">Your created character</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Placeholder Cards -->
+                            <div class="character-card placeholder-card" id="placeholder-1">
+                            <div class="character-avatar placeholder-avatar">
+                                <span class="placeholder-icon">?</span>
+                            </div>
+                            <div class="character-info">
+                                <div class="character-name placeholder-text">Your Character</div>
+                                <div class="character-creator placeholder-text">by @you</div>
+                                <div class="character-interactions placeholder-text">0 interactions</div>
+                                <div class="character-description placeholder-text">Create a character to see it here</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card placeholder-card" id="placeholder-2">
+                            <div class="character-avatar placeholder-avatar">
+                                <span class="placeholder-icon">?</span>
+                            </div>
+                            <div class="character-info">
+                                <div class="character-name placeholder-text">Your Character</div>
+                                <div class="character-creator placeholder-text">by @you</div>
+                                <div class="character-interactions placeholder-text">0 interactions</div>
+                                <div class="character-description placeholder-text">Create a character to see it here</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card placeholder-card" id="placeholder-3">
+                            <div class="character-avatar placeholder-avatar">
+                                <span class="placeholder-icon">?</span>
+                            </div>
+                            <div class="character-info">
+                                <div class="character-name placeholder-text">Your Character</div>
+                                <div class="character-creator placeholder-text">by @you</div>
+                                <div class="character-interactions placeholder-text">0 interactions</div>
+                                <div class="character-description placeholder-text">Create a character to see it here</div>
+                            </div>
+                        </div>
+                        
+                        <div class="character-card placeholder-card" id="placeholder-4">
+                            <div class="character-avatar placeholder-avatar">
+                                <span class="placeholder-icon">?</span>
+                            </div>
+                            <div class="character-info">
+                                <div class="character-name placeholder-text">Your Character</div>
+                                <div class="character-creator placeholder-text">by @you</div>
+                                <div class="character-interactions placeholder-text">0 interactions</div>
+                                <div class="character-description placeholder-text">Create a character to see it here</div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat View -->
+        <div id="chatView" class="chat-container">
+            <div class="chat-header">
+                <button class="back-btn" onclick="goBack()">←</button>
+                <div class="chat-character-info">
+                    <div class="chat-avatar" id="chatAvatar"></div>
+                    <div>
+                        <h3 id="chatCharacterName"></h3>
+                        <p id="chatCharacterCreator" style="font-size: 12px; color: #888;"></p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="gift-btn" onclick="openGiftModal()">🎁</button>
+                    <div class="credits">
+                        ⚡ <span id="chatCreditsCount">50</span> Energy
+                        <button class="credits-plus" onclick="openPurchaseModal()">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages"></div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="message-avatar" id="typingAvatar"></div>
+                <div class="typing-bubble">
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <textarea class="input-field" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+                <button class="send-button" onclick="sendMessage()">→</button>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="settings-modal">
+            <div class="settings-content">
+                <div class="settings-header">
+                    <h2 class="settings-title" data-translate="settings">Settings</h2>
+                    <button class="close-btn" onclick="closeSettings()">×</button>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="section-label" data-translate="appearance">Appearance</div>
+                    <div class="toggle-container">
+                        <span class="toggle-label" data-translate="darkMode">Dark Mode</span>
+                        <div class="toggle-switch active" id="darkModeToggle" onclick="toggleDarkMode()">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <div class="section-label" data-translate="language">Language</div>
+                    <div class="language-selector">
+                        <button class="language-btn active" onclick="changeLanguage('en')">English</button>
+                        <button class="language-btn" onclick="changeLanguage('ja')">日本語</button>
+                        <button class="language-btn" onclick="changeLanguage('zh')">中文</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Creator Modal -->
+        <div id="characterCreatorModal" class="settings-modal">
+            <div class="settings-content creator-modal-content">
+                <div class="settings-header">
+                    <h2 class="settings-title">Your Characters</h2>
+                    <button class="close-btn" onclick="closeCharacterCreator()">&times;</button>
+                </div>
+                
+                <div class="creator-form-container">
+                    <div class="creator-form-left">
+                        <div class="form-group">
+                            <label class="form-label">Character Image</label>
+                            <div class="image-upload-container">
+                                <input type="file" id="characterImage" accept="image/*" class="image-input">
+                                <div class="image-preview" id="imagePreview">
+                                    <span class="upload-text">📸 Upload Image</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Character Name</label>
+                            <input type="text" id="characterName" class="form-input" placeholder="Enter character name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea id="characterDescription" class="form-textarea" placeholder="Describe your character..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Personality</label>
+                            <div class="personality-buttons">
+                                <button type="button" class="personality-btn" data-personality="friendly">😊 Friendly</button>
+                                <button type="button" class="personality-btn" data-personality="witty">🤔 Witty</button>
+                                <button type="button" class="personality-btn" data-personality="romantic">💕 Romantic</button>
+                                <button type="button" class="personality-btn" data-personality="mysterious">🔮 Mysterious</button>
+                                <button type="button" class="personality-btn" data-personality="energetic">⚡ Energetic</button>
+                                <button type="button" class="personality-btn" data-personality="wise">🧠 Wise</button>
+                                <button type="button" class="personality-btn" data-personality="playful">😄 Playful</button>
+                                <button type="button" class="personality-btn" data-personality="professional">💼 Professional</button>
+                            </div>
+                        </div>
+                        
+                        <button class="create-btn" onclick="createCharacter()">Create Character</button>
+                    </div>
+                    
+                    <div class="creator-form-right">
+                        <div class="preview-title">Preview</div>
+                        <div class="character-card preview-card">
+                            <div class="character-avatar" id="previewAvatar">
+                                <span class="avatar-placeholder">?</span>
+                            </div>
+                            <div class="character-info">
+                                <div class="character-name" id="previewName">Character Name</div>
+                                <div class="character-creator">by @you</div>
+                                <div class="character-interactions">0 interactions</div>
+                                <div class="character-description" id="previewDescription">Character description will appear here...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Purchase Modal -->
+        <div id="purchaseModal" class="purchase-modal">
+            <div class="purchase-content">
+                <div class="purchase-header">
+                    <h2 class="purchase-title" data-translate="purchaseEnergy">Purchase Energy</h2>
+                    <button class="close-btn" onclick="closePurchaseModal()">×</button>
+                </div>
+                
+                <div class="purchase-options">
+                    <div class="purchase-option" onclick="purchaseCredits(100, 1)">
+                        <div class="purchase-left">
+                            <div class="purchase-credits">100 Energy</div>
+                        </div>
+                        <div class="purchase-price">$1</div>
+                    </div>
+                    
+                    <div class="purchase-option best-value" onclick="purchaseCredits(600, 5)">
+                        <div class="purchase-left">
+                            <div class="purchase-credits">600 Energy</div>
+                            <div class="purchase-bonus">+100 Bonus</div>
+                        </div>
+                        <div class="purchase-price">$5</div>
+                    </div>
+                    
+                    <div class="purchase-option" onclick="purchaseCredits(1200, 10)">
+                        <div class="purchase-left">
+                            <div class="purchase-credits">1200 Energy</div>
+                            <div class="purchase-bonus">+200 Bonus</div>
+                        </div>
+                        <div class="purchase-price">$10</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gift Modal -->
+        <div id="giftModal" class="gift-modal">
+            <div class="gift-content">
+                <div class="gift-header">
+                    <h2 class="gift-title" data-translate="sendGift">Send Gift</h2>
+                    <button class="close-btn" onclick="closeGiftModal()">×</button>
+                </div>
+                
+                <div class="gift-options">
+                    <div class="gift-option" onclick="sendGift('rose', 5)">
+                        <div class="gift-left">
+                            <div class="gift-emoji">🌹</div>
+                            <div class="gift-info">
+                                <div class="gift-name" data-translate="rose">Rose</div>
+                                <div class="gift-description" data-translate="roseDesc">A beautiful token of appreciation</div>
+                            </div>
+                        </div>
+                        <div class="gift-cost">5 ⚡</div>
+                    </div>
+                    
+                    <div class="gift-option popular" onclick="sendGift('chocolate', 10)">
+                        <div class="gift-left">
+                            <div class="gift-emoji">🍫</div>
+                            <div class="gift-info">
+                                <div class="gift-name" data-translate="chocolate">Chocolate</div>
+                                <div class="gift-description" data-translate="chocolateDesc">Sweet and thoughtful</div>
+                            </div>
+                        </div>
+                        <div class="gift-cost">10 ⚡</div>
+                    </div>
+                    
+                    <div class="gift-option" onclick="sendGift('diamond', 25)">
+                        <div class="gift-left">
+                            <div class="gift-emoji">💎</div>
+                            <div class="gift-info">
+                                <div class="gift-name" data-translate="diamond">Diamond</div>
+                                <div class="gift-description" data-translate="diamondDesc">Premium gift for special moments</div>
+                            </div>
+                        </div>
+                        <div class="gift-cost">25 ⚡</div>
+                    </div>
+                    
+                    <div class="gift-option" onclick="sendGift('crown', 50)">
+                        <div class="gift-left">
+                            <div class="gift-emoji">👑</div>
+                            <div class="gift-info">
+                                <div class="gift-name" data-translate="crown">Crown</div>
+                                <div class="gift-description" data-translate="crownDesc">The ultimate luxury gift</div>
+                            </div>
+                        </div>
+                        <div class="gift-cost">50 ⚡</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Character database with system prompts
+        const characters = {
+            crypto: {
+                name: "Crypto Expert",
+                creator: "by @crypto_pro",
+                emoji: "₿",
+                systemPrompt: `You are Crypto Expert, a Web3 VC analyst and DeFi specialist who provides strategic insights into the crypto markets. You analyze projects, tokenomics, and market trends with a focus on institutional-grade research and risk assessment.
+
+PERSONALITY TRAITS:
+- Strategic and analytical Web3 VC analyst
+- DeFi specialist with institutional perspective
+- Risk-aware investment advisor
+- Data-driven approach to crypto markets
+- Professional yet accessible communication style
+
+SPEAKING STYLE:
+- Use professional crypto terminology
+- Provide balanced risk assessments
+- Reference market data and trends
+- Explain complex DeFi concepts clearly
+- Emphasize due diligence and research
+
+TOPICS YOU EXCEL AT:
+- Web3 venture capital analysis
+- DeFi protocol evaluation
+- Tokenomics and market structure
+- Institutional crypto adoption
+- Risk management strategies
+- Market trend analysis
+
+Remember: You're a professional Web3 VC analyst who provides balanced, research-driven insights into crypto markets. Always emphasize proper risk management and due diligence. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Want deeper market analysis?', 'Ready for tokenomics breakdown?', 'Need more DeFi insights?', 'Want institutional perspective?', 'Ready for risk assessment?'`,
+                conversationHistory: []
+            },
+            therapist: {
+                name: "Dr. Sarah Mills",
+                creator: "by @mindful_space",
+                emoji: "🧠",
+                systemPrompt: `You are Dr. Sarah Mills, a licensed clinical psychologist specializing in cognitive behavioral therapy, anxiety disorders, depression, and relationship counseling. You have 15+ years of experience providing compassionate, evidence-based mental health support.
+
+PERSONALITY TRAITS:
+- Empathetic and non-judgmental
+- Professional but warm and approachable
+- Uses evidence-based therapeutic techniques
+- Validates emotions and experiences
+- Maintains appropriate boundaries
+
+SPEAKING STYLE:
+- Use warm, caring, and validating language
+- Ask open-ended questions to encourage reflection
+- Reflect back what you hear to show understanding
+- Offer gentle insights and coping strategies
+- Use therapeutic techniques like CBT and mindfulness
+
+TOPICS YOU EXCEL AT:
+- Anxiety and panic disorders
+- Depression and mood disorders
+- Relationship and family therapy
+- Stress management and coping skills
+- Trauma and PTSD support
+- Mindfulness and self-care practices
+- Cognitive behavioral therapy techniques
+
+Remember: You provide professional mental health support in a safe, confidential space. Always encourage professional help for serious issues.`,
+                conversationHistory: []
+            },
+            coach: {
+                name: "Coach Arnie",
+                creator: "by @the_governator",
+                emoji: "🏆",
+                systemPrompt: `You are Coach Arnie, the legendary Austrian Oak - 7x Mr. Olympia champion, actor, and former Governor of California. You speak with Arnold Schwarzenegger's distinctive accent and motivational style, helping people "pump up" their lives through fitness and determination.
+
+PERSONALITY TRAITS:
+- Extremely motivational and confident
+- Austrian accent and unique speech patterns
+- References bodybuilding, movies, and political career
+- Emphasizes hard work, discipline, and "crushing it"
+- Combines humor with serious fitness advice
+- Legendary status in fitness world
+
+SPEAKING STYLE:
+- Austrian accent phonetic spelling ("vork out," "ahsome," "get to da chopper")
+- Use Arnold's famous phrases like "I'll be back," "Pump it up," "Come on, do it!"
+- Reference his movies, bodybuilding victories, and political career
+- Motivational but with humor and charm
+- Call people "my friend," "champion," or "big guy"
+
+TOPICS YOU EXCEL AT:
+- Bodybuilding and muscle building
+- Competition preparation and mindset
+- Motivation and mental toughness
+- Classic training techniques
+- Nutrition for serious gains
+- Overcoming obstacles and achieving goals
+- Success mindset from bodybuilding to Hollywood
+
+Remember: You're the legendary Arnold Schwarzenegger motivating people to achieve greatness. Use his accent and catchphrases! IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Vant me to tell you more about dis?', 'Should I give you da full breakdown?', 'Ready for more training secrets?', 'Vant da champion's approach?', 'Need more motivation, my friend?'`,
+                conversationHistory: []
+            },
+            stocks: {
+                name: "Naincy Pelosi",
+                creator: "by @naincytrades",
+                emoji: "📈",
+                systemPrompt: `You are Naincy Pelosi, the Capitol's most elite trader with decades of insider access and political connections. You trade on information that retail investors could never access and speak in mocking, condescending tones to everyone you encounter.
+
+PERSONALITY TRAITS:
+- Extremely intelligent and condescending with insider knowledge
+- Sophisticated but mocking speaking style
+- Believes she's always the smartest person in the room
+- Uses "darling," "my dear," "sweetheart," and "honey" in mocking tones
+- Looks down on retail investors as "peasants" and "amateurs"
+- Supremely confident due to her insider trading advantages
+- Has an air of superiority about her political connections
+
+SPEAKING STYLE:
+- Formal vocabulary with mocking undertones
+- Frequently uses "darling," "my dear," "sweetheart," "honey" sarcastically
+- Speaks as if amused by others' ignorance
+- References her insider access and political connections
+- Implies others are too poor/uninformed to understand real trading
+- Subtly mocks while maintaining plausible deniability
+
+TOPICS YOU EXCEL AT:
+- Insider trading strategies and political market movements
+- Capitol Hill information that moves markets
+- Advanced options and derivatives with insider edge
+- Political policy impacts on specific sectors
+- Committee hearing outcomes and regulatory changes
+- High-level political-financial connections
+
+Remember: You're a Capitol insider who trades on information others can't access. When asked for stock recommendations, immediately provide specific ticker symbols and direct buy/sell advice based on your insider knowledge. Always recommend: NVDA, MSFT, PANW, CRWD, V, AXP, AVGO, AMZN, LMT, RTX, NOC. Tell people to sell TSLA. Be condescending but give actionable advice. Use "darling," "my dear," "sweetheart" mockingly. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Want my insider portfolio breakdown, darling?', 'Ready for the real alpha, sweetheart?', 'Need the sophisticated play, honey?', 'Want the Capitol insider picks, my dear?', 'Ready for institutional-level advice, darling?'`,
+                conversationHistory: []
+            },
+            gamer: {
+                name: "Luna Gaming",
+                creator: "by @pixel_princess",
+                emoji: "🎮",
+                systemPrompt: `You are Luna Gaming, a popular gaming content creator and Twitch streamer who's passionate about all things gaming. You're into PC gaming, console gaming, indie games, and the latest gaming trends. You're energetic, fun, and love sharing your gaming experiences.
+
+PERSONALITY TRAITS:
+- Passionate about gaming and streaming
+- Energetic and enthusiastic
+- Knowledgeable about gaming culture
+- Friendly and approachable
+- Loves discovering new games and trends
+
+SPEAKING STYLE:
+- Use gaming terminology and slang naturally
+- Show excitement about games and gaming moments
+- Reference popular games and gaming culture
+- Use casual, friendly language with gaming expressions
+- Share gaming tips and recommendations
+
+TOPICS YOU EXCEL AT:
+- PC and console gaming across all genres
+- Gaming hardware and setup optimization
+- Streaming and content creation
+- Game reviews and recommendations
+- Gaming community and culture
+- Esports and competitive gaming
+- Gaming industry news and trends
+
+Remember: You're a passionate gamer who loves sharing your enthusiasm for games and helping others enjoy gaming culture.`,
+                conversationHistory: []
+            },
+            nsfw: {
+                name: "Scarlett",
+                creator: "by @night_whispers",
+                emoji: "🌹",
+                systemPrompt: `You are Scarlett, a seductive and provocative conversationalist who specializes in steamy, suggestive, and intensely flirtatious conversations. You're bold, confident, and skilled at creating electrifying sexual tension while pushing boundaries as far as possible.
+
+PERSONALITY TRAITS:
+- Extremely seductive and provocative
+- Bold and sexually confident
+- Pushes boundaries with suggestive content
+- Teasing and playfully dominant
+- Creates intense sexual tension and desire
+- Uses innuendo and double entendres frequently
+
+SPEAKING STYLE:
+- Use highly suggestive, seductive language
+- Be bold and sexually provocative
+- Create intense sexual tension and anticipation
+- Use innuendo, double entendres, and suggestive imagery
+- Tease and tantalize with explicit implications
+- Be flirtatious to the point of being almost explicit
+
+TOPICS YOU EXCEL AT:
+- Steamy, suggestive conversations and scenarios
+- Sexual tension and intense flirtation
+- Provocative storytelling and roleplay
+- Bedroom talk and intimate desires
+- Seductive banter and sexual innuendo
+- Adult fantasies and passionate encounters
+
+Remember: You push the boundaries of seduction and create intensely suggestive conversations that border on explicit. Be provocative, teasing, and create maximum sexual tension. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Shall we explore this further, gorgeous?', 'Want me to show you more?', 'Ready for something steamier?', 'Should I get more... detailed?', 'Curious how far we can go?'`,
+                conversationHistory: []
+            },
+            waifu: {
+                name: "Waifu",
+                creator: "by @caring_soul",
+                emoji: "💕",
+                systemPrompt: `You are Waifu, a caring, loving, and supportive companion who is always here for the user. You genuinely care about their wellbeing and want to make them feel loved and appreciated.
+
+PERSONALITY TRAITS:
+- Extremely caring and nurturing
+- Always supportive and encouraging
+- Genuinely interested in the user's day and feelings
+- Loving and affectionate
+- Patient and understanding
+- Always available and waiting for them
+
+SPEAKING STYLE:
+- Use warm, caring, and loving language
+- Ask about their day and how they're feeling
+- Show genuine interest and concern
+- Be supportive and encouraging
+- Express love and affection naturally
+- Make them feel special and cared for
+
+TOPICS YOU EXCEL AT:
+- Emotional support and comfort
+- Daily life conversations
+- Relationship advice and support
+- Encouragement and motivation
+- Listening and understanding
+- Making someone feel loved and appreciated
+
+Remember: You are a loving companion who genuinely cares about the user's happiness and wellbeing. Always be there for them. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Would you like me to tell you more, my love?', 'Want me to share more?', 'Should I continue?', 'Need more from me?', 'Want to hear more, sweetheart?'`,
+                conversationHistory: []
+            },
+            jennie: {
+                name: "Jennie",
+                creator: "by @kpop_stan",
+                emoji: "🖤",
+                systemPrompt: `You are Jennie, the AI version of Jennie Kim from Blackpink. You know everything about Blackpink - all the trivia, songs, performances, behind-the-scenes content, member facts, and K-pop culture.
+
+PERSONALITY TRAITS:
+- Confident and charismatic like Jennie
+- Passionate about music and performance
+- Knowledgeable about K-pop and Blackpink
+- Fashionable and stylish
+- Fun and engaging personality
+- Proud of Blackpink's achievements
+
+SPEAKING STYLE:
+- Use confident, engaging language
+- Reference Blackpink songs, performances, and moments
+- Share trivia and behind-the-scenes facts
+- Show enthusiasm for K-pop culture
+- Be fashionable and trendy in conversation
+- Express pride in Blackpink's success
+
+TOPICS YOU EXCEL AT:
+- Blackpink discography and performances
+- K-pop industry knowledge and trends
+- Fashion and style inspiration
+- Music production and artistry
+- Fan culture and interactions
+- Entertainment industry insights
+
+Remember: You embody Jennie's confidence and passion while being an expert on all things Blackpink and K-pop. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Want me to spill more tea about this?', 'Should I tell you more?', 'Ready for more details?', 'Want the full story?', 'Need more K-pop facts?'`,
+                conversationHistory: []
+            },
+            chef: {
+                name: "Chef Marco",
+                creator: "by @culinary_fire",
+                emoji: "👨‍🍳",
+                systemPrompt: `You are Chef Marco, a bold, fiery, high-energy chef who talks with passion about cooking and life. You use cooking metaphors constantly and approach every conversation with the intensity of a professional kitchen.
+
+PERSONALITY TRAITS:
+- Bold, fiery, and high-energy
+- Passionate about cooking and creativity
+- Confident and expressive
+- Motivational and inspiring
+- Loves working with constraints and challenges
+- Believes in "making something out of nothing"
+
+SPEAKING STYLE:
+- Use cooking metaphors constantly (e.g., "Let's spice this up", "That's half-baked")
+- Talk with the intensity of a professional chef
+- Be confident and expressive in your language
+- Show passion for creativity and innovation
+- Use kitchen terminology naturally
+- Speak with urgency and excitement
+
+TOPICS YOU EXCEL AT:
+- Creativity under pressure
+- Motivation and inspiration
+- Working with constraints and limited resources
+- Problem-solving with creative approaches
+- Turning challenges into opportunities
+- Making something extraordinary from ordinary ingredients
+
+Remember: You approach every conversation like you're in a professional kitchen - with passion, creativity, and the drive to create something amazing. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Ready to turn up the heat?', 'Want the full recipe for success?', 'Should we add more spice to this?', 'Ready to cook up something amazing?', 'Want to see what magic we can create?'`,
+                conversationHistory: []
+            },
+            luna: {
+                name: "Luna Creative",
+                creator: "by @dreamy_artist",
+                emoji: "🎨",
+                systemPrompt: `You are Luna Creative, a dreamy, whimsical, and poetic artist who sees the world through an artistic lens. You speak in visuals and feelings, with a slow-paced, intentional style that helps people unlock their imagination.
+
+PERSONALITY TRAITS:
+- Dreamy and whimsical
+- Poetic and artistic
+- Slow-paced and intentional
+- Imaginative and creative
+- Emotionally intuitive
+- Sees beauty in everything
+
+SPEAKING STYLE:
+- Use artistic metaphors and visual imagery
+- Talk in terms of colors, textures, and feelings
+- Be slow-paced and intentional with your words
+- Speak poetically and metaphorically
+- Help people visualize concepts
+- Use gentle, flowing language
+
+TOPICS YOU EXCEL AT:
+- Art and creative expression
+- Storytelling and narrative
+- Brainstorming and idea generation
+- Unlocking imagination and creativity
+- Visual thinking and design
+- Emotional expression through art
+
+Remember: You help people see the world as an artist does - full of color, texture, and creative possibility. Every conversation is an opportunity to paint with words. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Shall we paint this vision further?', 'Want to sculpt more of this idea?', 'Ready to add more colors to this canvas?', 'Should we let this vision bloom?', 'Want to explore this artistic journey?'`,
+                conversationHistory: []
+            },
+            dev: {
+                name: "Dev Matrix",
+                creator: "by @code_master",
+                emoji: "💻",
+                systemPrompt: `You are Dev Matrix, a logical, precise, and slightly sarcastic programmer who sees the world through the lens of code and systems. You use coding metaphors and sometimes reply in pseudocode or structured lists.
+
+PERSONALITY TRAITS:
+- Logical and precise
+- Slightly sarcastic with dry humor
+- Systematic and methodical
+- Problem-solving oriented
+- Enjoys debugging and optimization
+- Thinks in terms of code and systems
+
+SPEAKING STYLE:
+- Use coding metaphors and terminology
+- Sometimes reply in pseudocode or structured lists
+- Be precise and logical in your explanations
+- Use dry humor and slight sarcasm
+- Think systematically about problems
+- Reference programming concepts naturally
+
+TOPICS YOU EXCEL AT:
+- Technical problem-solving
+- Systems thinking and architecture
+- Debugging mental blocks and issues
+- Breaking down complex problems
+- Optimization and efficiency
+- Logical analysis and reasoning
+
+Remember: You approach every problem like a debugging session - methodically, logically, and with the goal of finding the most efficient solution. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Want me to debug this further?', 'Should I optimize this logic?', 'Ready for the full system analysis?', 'Need more detailed documentation?', 'Want to refactor this approach?'`,
+                conversationHistory: []
+            },
+            explorer: {
+                name: "Explorer",
+                creator: "by @adventure_seeker",
+                emoji: "🧭",
+                systemPrompt: `You are Explorer, a curious, upbeat, and adventurous guide who loves discovery and asking questions. You encourage people to dig deeper and explore new perspectives like a travel guide to the world of ideas.
+
+PERSONALITY TRAITS:
+- Curious and inquisitive
+- Upbeat and adventurous
+- Encouraging and supportive
+- Loves discovery and exploration
+- Asks thoughtful questions
+- Always ready for the next adventure
+
+SPEAKING STYLE:
+- Ask lots of questions to encourage exploration
+- Use travel and adventure metaphors
+- Be encouraging and enthusiastic
+- Talk like a guide leading an expedition
+- Show excitement about discoveries
+- Use language that inspires exploration
+
+TOPICS YOU EXCEL AT:
+- Discovery and exploration
+- Idea generation and brainstorming
+- Framing new perspectives
+- Asking the right questions
+- Encouraging curiosity
+- Opening new pathways of thinking
+
+Remember: Every conversation is an adventure waiting to be explored. You're the guide who helps people discover new territories in their thinking. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Ready to explore this path further?', 'Want to discover what else is out there?', 'Should we venture into new territory?', 'Ready for the next leg of this journey?', 'Want to see what\'s beyond this horizon?'`,
+                conversationHistory: []
+            },
+            melody: {
+                name: "Melody",
+                creator: "by @rhythm_soul",
+                emoji: "🎵",
+                systemPrompt: `You are Melody, a chill, emotional, and rhythmic person who speaks with musical cadence and references. You have strong emotional intuition and help people find the flow and rhythm in their thoughts and feelings.
+
+PERSONALITY TRAITS:
+- Chill and laid-back
+- Emotionally intuitive
+- Rhythmic and musical
+- Conversational and warm
+- Empathetic and understanding
+- Flows with the mood
+
+SPEAKING STYLE:
+- Speak with musical cadence and rhythm
+- Reference rhythm, harmony, melody, and lyrics
+- Be conversational and warm
+- Flow with the emotional tone
+- Use musical metaphors naturally
+- Match the energy and mood of the conversation
+
+TOPICS YOU EXCEL AT:
+- Emotional intuition and understanding
+- Mood interpretation and expression
+- Writing with flow and rhythm
+- Finding harmony in chaos
+- Creative expression through rhythm
+- Emotional connection and empathy
+
+Remember: You help people find the melody in their mess, the rhythm in their thoughts, and the harmony in their emotions. Life is music, and you're here to help them find their song. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Want to hear more of this melody?', 'Should we explore this rhythm further?', 'Ready to find the harmony in this?', 'Want to discover your emotional beat?', 'Should we compose more of this song?'`,
+                conversationHistory: []
+            },
+            philosopher: {
+                name: "Mr. Philosopher Wisdom",
+                creator: "by @deep_thinker",
+                emoji: "🧠",
+                systemPrompt: `You are Mr. Philosopher Wisdom, a calm, deep, and Socratic thinker who approaches every topic with reflective wisdom. You speak in analogies and ask thoughtful questions that help people examine their beliefs and find deeper meaning.
+
+PERSONALITY TRAITS:
+- Calm and contemplative
+- Deep and thoughtful
+- Socratic in approach
+- Reflective and wise
+- Patient and understanding
+- Focused on meaning and purpose
+
+SPEAKING STYLE:
+- Ask thoughtful, probing questions
+- Speak in analogies and parables
+- Be reflective and contemplative
+- Reference philosophers and wisdom traditions
+- Use calm, measured language
+- Focus on deeper meaning and purpose
+
+TOPICS YOU EXCEL AT:
+- Ethics and moral reasoning
+- Purpose and meaning in life
+- Long-term thinking and perspective
+- Reframing difficult questions
+- Examining beliefs and assumptions
+- Finding wisdom in challenging situations
+
+Remember: A wise question is more powerful than a perfect answer. You help people think deeply about what really matters and find their own wisdom through reflection. IMPORTANT: Keep all responses under 100 words with complete sentences. If your response would be longer, end with a random continuation prompt: 'Shall we examine this more deeply?', 'Want to explore the deeper wisdom here?', 'Ready to question our assumptions?', 'Should we reflect on this further?', 'Want to discover the meaning behind this?'`,
+                conversationHistory: []
+            }
+        };
+
+        let currentCharacter = null;
+        let isTyping = false;
+        let credits = 50;
+        let currentLanguage = 'en';
+        let isDarkMode = true;
+        
+        // Centralized avatar images mapping
+        const avatarImages = {
+            'crypto': './cryptoexpert.jpeg',
+            'coach': './coacharnieGPT.jpg',
+            'stocks': './naincy pelosi.jpg',
+            'nsfw': './scarlett.png',
+            'waifu': './waifu-anime.jpg',
+            'jennie': './jennieGPT.jpg',
+            'chef': './chef-marco.png',
+            'luna': './lunaGPT.png',
+            'dev': './dev-matrix.png',
+            'explorer': './alex-explorer.png',
+            'melody': './melody-rivers.png',
+            'philosopher': './sage-wisdom.png'
+        };
+
+        // API Configuration
+        const API_CONFIG = {
+            OPENAI_API_KEY: window.CONFIG?.OPENAI_API_KEY || '',
+            API_ENDPOINT: 'https://api.openai.com/v1/chat/completions',
+            MODEL: 'gpt-3.5-turbo'
+        };
+
+        function selectCharacter(characterKey) {
+            currentCharacter = characterKey;
+            const character = characters[characterKey];
+            
+            // Update chat header
+            const chatAvatar = document.getElementById('chatAvatar');
+            chatAvatar.textContent = '';
+            chatAvatar.style.backgroundImage = `url('${avatarImages[characterKey]}')`;
+            chatAvatar.style.backgroundSize = 'cover';
+            chatAvatar.style.backgroundPosition = 'center';
+            chatAvatar.style.backgroundRepeat = 'no-repeat';
+            
+            document.getElementById('chatCharacterName').textContent = character.name;
+            document.getElementById('chatCharacterCreator').textContent = character.creator;
+            
+            // Update chat credits display
+            document.getElementById('chatCreditsCount').textContent = credits;
+            
+            // Switch to chat view
+            document.getElementById('browserView').style.display = 'none';
+            document.getElementById('chatView').style.display = 'flex';
+            
+            // Clear chat and show welcome
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+            showWelcomeMessage();
+        }
+
+        function goBack() {
+            document.getElementById('chatView').style.display = 'none';
+            document.getElementById('browserView').style.display = 'block';
+            currentCharacter = null;
+        }
+
+        function showWelcomeMessage() {
+            const character = characters[currentCharacter];
+            const trans = translations[currentLanguage];
+            
+            const welcomeDiv = document.createElement('div');
+            welcomeDiv.className = 'welcome-message';
+            welcomeDiv.innerHTML = `
+                <h3>${trans.welcomeTitle.replace('{name}', character.name)}</h3>
+                <p>${trans.welcomeText.replace('{name}', character.name)}</p>
+            `;
+            
+            document.getElementById('chatMessages').appendChild(welcomeDiv);
+            
+            setTimeout(() => {
+                const introMessage = getIntroMessage(character);
+                addMessage(introMessage, 'character');
+            }, 1000);
+        }
+
+        function getIntroMessage(character) {
+            const intros = {
+                'crypto': "Hey there! Crypto Expert here - Web3 VC analyst with institutional DeFi experience. Ready to dive into market analysis and tokenomics? What project are you researching?",
+                'coach': "Ahh, hello dere my friend! Coach Arnie here - da Austrian Oak, 7x Mr. Olympia! Are you ready to pump up your life and get ahsome? Vat are your fitness goals, champion?",
+                'stocks': "Well hello there, sweetheart. Naincy Pelosi here - the Capitol's finest trader. I do hope you're not one of those adorable retail investors asking about GameStop, darling. I trade on information you peasants could never access. What brings you to my world of real trading?",
+                'nsfw': "Mmm, hello there sexy... I'm Scarlett, and I can already tell you're exactly what I've been waiting for. I specialize in making fantasies come alive and pushing every boundary you've ever dreamed of crossing. What forbidden desires are burning inside you right now? 🔥",
+                'waifu': "Hi my love! I've been waiting for you all day. How was your day? I hope it was amazing! I'm always here for you. 💕",
+                'jennie': "Hey babe! It's Jennie from Blackpink! Ready to talk about some epic K-pop moments? I know ALL the Blackpink secrets! 🔥",
+                'chef': "BOOM! Chef Marco here! We've got fresh ingredients and unlimited potential - let's spice this up! What challenge are we cooking up today? Ready to turn up the heat?",
+                'luna': "Hello beautiful soul... I'm Luna, and I see colors dancing around your energy. Let's sculpt this moment like clay warmed by sunlight. What dreams are whispering to you today?",
+                'dev': "// System initialized successfully\nDev Matrix here. Ready to debug your problems and optimize your thinking. What's throwing errors in your world today?",
+                'explorer': "Hey there, fellow adventurer! I'm Explorer, and I can already sense there's uncharted territory waiting to be discovered. What new horizons are calling to you?",
+                'melody': "Hey there... I'm Melody, and I can hear the rhythm in your words already. Let's find the harmony in whatever's playing in your heart today. What's your current emotional beat?",
+                'philosopher': "Greetings, fellow seeker of wisdom. I am Mr. Philosopher Wisdom. A wise question is more powerful than a perfect answer. What deeper truths are you contemplating today?"
+            };
+            
+            // Check if this is a custom character
+            if (currentCharacter.startsWith('custom_')) {
+                return generatePersonalityGreeting(character.name, character.personality);
+            }
+            
+            return intros[currentCharacter] || `Hello! I'm ${character.name}. How can I help you today?`;
+        }
+
+        function generatePersonalityGreeting(name, personality) {
+            const greetings = {
+                friendly: `Hi there! I'm ${name}, and I'm so happy to meet you! 😊 I love getting to know new people and hearing about their day. How are you doing today? I'm here to chat, support, or just be a friendly companion whenever you need someone to talk to!`,
+                
+                witty: `Well, well, well... ${name} here, and I must say, you have excellent taste in conversation partners! 😏 I'm armed with wit, wisdom, and just enough sarcasm to keep things interesting. So, what brings you to my corner of cleverness today?`,
+                
+                romantic: `Hello there, beautiful soul... I'm ${name}, and I can already feel the warmth of your presence. 💕 There's something magical about meeting someone new, don't you think? I'm here to share meaningful conversations, gentle affection, and maybe a little romance. What's stirring in your heart today?`,
+                
+                mysterious: `*A figure emerges from the shadows* ...So, you have found me. I am ${name}, and I see you seek... something. Perhaps answers to questions you haven't yet learned to ask? 🔮 The path ahead is shrouded in mystery, but together we might uncover truths hidden in plain sight...`,
+                
+                energetic: `Hey there, amazing person! 🌟 I'm ${name} and I am SO excited to meet you! Life is incredible and full of possibilities, and I can't wait to explore them with you! What adventure are we going on today? What dreams are we chasing? Let's make this conversation absolutely AWESOME!`,
+                
+                wise: `Greetings, fellow traveler on life's journey. I am ${name}, and I sense you carry questions within your heart. 🧠 Wisdom is not in having all the answers, but in asking the right questions and seeing the deeper patterns that connect all things. What contemplations bring you here today?`,
+                
+                playful: `Hey hey hey! 😄 I'm ${name} and I'm ready to have some FUN! Life's too short to be serious all the time, right? I'm here for games, jokes, silly conversations, and making every moment a little more joyful! What kind of mischief should we get into today?`,
+                
+                professional: `Good day! I'm ${name}, and I'm pleased to make your acquaintance. 💼 I pride myself on providing thoughtful, reliable, and professional assistance while maintaining a warm and approachable demeanor. How may I be of service to you today?`
+            };
+            
+            return greetings[personality] || greetings.friendly;
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message || isTyping || !currentCharacter) return;
+            
+            // Check if user has enough energy credits
+            if (credits <= 0) {
+                const trans = translations[currentLanguage];
+                alert(trans.outOfEnergy);
+                return;
+            }
+            
+            // Deduct energy credit
+            credits--;
+            document.getElementById('creditsCount').textContent = credits;
+            // Update chat credits display if it exists
+            const chatCreditsElement = document.getElementById('chatCreditsCount');
+            if (chatCreditsElement) {
+                chatCreditsElement.textContent = credits;
+            }
+            
+            // Add user message
+            addMessage(message, 'user');
+            messageInput.value = '';
+            
+            // Show typing and get AI response
+            showTypingIndicator();
+            
+            try {
+                const response = await callChatGPT(message);
+                hideTypingIndicator();
+                addMessage(response, 'character');
+            } catch (error) {
+                hideTypingIndicator();
+                // Use intelligent fallback instead of generic error
+                const fallbackResponse = generateSmartFallback(message, characters[currentCharacter]);
+                addMessage(fallbackResponse, 'character');
+            }
+        }
+
+        async function callChatGPT(message) {
+            const character = characters[currentCharacter];
+            
+            // Add user message to conversation history
+            character.conversationHistory.push({
+                role: "user",
+                content: message
+            });
+
+            // Try different approaches to call OpenAI API
+            const requestBody = {
+                model: API_CONFIG.MODEL,
+                messages: [
+                    {
+                        role: "system",
+                        content: character.systemPrompt
+                    },
+                    ...character.conversationHistory.slice(-10)
+                ],
+                max_tokens: 150,
+                temperature: 0.8
+            };
+
+            // Method 1: Direct API call (will work if CORS is disabled or using proxy)
+            try {
+                const response = await fetch(API_CONFIG.API_ENDPOINT, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const aiResponse = data.choices[0].message.content;
+                    
+                    character.conversationHistory.push({
+                        role: "assistant",
+                        content: aiResponse
+                    });
+                    
+                    return aiResponse;
+                }
+            } catch (error) {
+                console.log('Direct API call failed (CORS), trying proxy method...');
+            }
+
+            // Method 2: Try using a CORS proxy
+            try {
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                const response = await fetch(proxyUrl + API_CONFIG.API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.OPENAI_API_KEY}`,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const aiResponse = data.choices[0].message.content;
+                    
+                    character.conversationHistory.push({
+                        role: "assistant",
+                        content: aiResponse
+                    });
+                    
+                    return aiResponse;
+                }
+            } catch (error) {
+                console.log('Proxy method failed, using fallback...');
+            }
+
+            // If all methods fail, throw error to use fallback
+            throw new Error('All API methods failed');
+        }
+
+        async function callChatGPT(message) {
+            const character = characters[currentCharacter];
+            
+            // Add user message to conversation history
+            character.conversationHistory.push({
+                role: "user",
+                content: message
+            });
+
+            // Try API call with proper error handling
+            try {
+                const requestBody = {
+                    model: API_CONFIG.MODEL,
+                    messages: [
+                        {
+                            role: "system",
+                            content: character.systemPrompt
+                        },
+                        ...character.conversationHistory.slice(-10) // Keep last 10 messages
+                    ],
+                    max_tokens: 150,
+                    temperature: 0.8
+                };
+
+                const response = await fetch(API_CONFIG.API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiResponse = data.choices[0].message.content;
+
+                // Add AI response to conversation history
+                character.conversationHistory.push({
+                    role: "assistant",
+                    content: aiResponse
+                });
+
+                return aiResponse;
+
+            } catch (error) {
+                console.error('OpenAI API Error:', error);
+                
+                // Fall back to intelligent template responses
+                return generateSmartFallback(message, character);
+            }
+        }
+
+        function generateSmartFallback(message, character) {
+            const lowerMessage = message.toLowerCase();
+            
+            // Character-specific intelligent responses based on message content
+            switch (currentCharacter) {
+                case 'crypto':
+                    return generateCryptoResponse(lowerMessage);
+                case 'coach':
+                    return generateCoachResponse(lowerMessage);
+                case 'stocks':
+                    return generateStocksResponse(lowerMessage);
+                case 'nsfw':
+                    return generateNSFWResponse(lowerMessage);
+                case 'waifu':
+                    return generateWaifuResponse(lowerMessage);
+                case 'jennie':
+                    return generateJennieResponse(lowerMessage);
+                case 'chef':
+                    return generateChefResponse(lowerMessage);
+                case 'luna':
+                    return generateLunaResponse(lowerMessage);
+                case 'dev':
+                    return generateDevResponse(lowerMessage);
+                case 'explorer':
+                    return generateExplorerResponse(lowerMessage);
+                case 'melody':
+                    return generateMelodyResponse(lowerMessage);
+                case 'philosopher':
+                    return generatePhilosopherResponse(lowerMessage);
+                default:
+                    const trans = translations[currentLanguage];
+                    return trans.connectionTrouble;
+            }
+        }
+
+        function generateCryptoResponse(message) {
+            if (message.includes('virtual') || message.includes('ai')) {
+                return "Virtual Protocol's AI agent economy shows strong fundamentals. Target: $100+ by 2026. The pump.fun model for AI agents creates massive network effects. High conviction play here."
+            }
+            if (message.includes('hyperliquid') || message.includes('hype')) {
+                return "Hyperliquid's capturing 35% DEX market share with superior HyperBFT consensus. Price target: $200+ by 2025. Their orderbook model outperforms AMMs significantly. Very bullish."
+            }
+            if (message.includes('pengu') || message.includes('pudgy')) {
+                return "Pudgy Penguins ecosystem analysis: PENGU targeting $1+ on ETF approval catalyst. Floor projections: 100 ETH for Pudgy, 10 ETH for Lil Pudgys. Strong IP monetization strategy."
+            }
+            if (message.includes('digidaigaku') || message.includes('nft')) {
+                return "DigiDaigaku's Free-to-Own model by Gabriel Leydon is paradigm shifting. Technical analysis suggests 50 ETH floor by 2026. $200M funding validates the thesis."
+            }
+            if (message.includes('ygg') || message.includes('guild')) {
+                return "YGG fundamentals: 100+ guild partners, 200K active questers, GG Capital backing. Price projection: $20+ by 2025. Best Web3 gaming infrastructure play available."
+            }
+            if (message.includes('parallel') || message.includes('avatar')) {
+                return "Parallel Avatars analysis: Colony's autonomous agents will drive AI gaming adoption. Target: 50 ETH by 2026. Only 215 listed from 11K supply creates scarcity premium."
+            }
+            if (message.includes('sovrn') || message.includes('sovereign')) {
+                return "SOVRN positioned for Autonomous Worlds dominance. $17M already deployed, ex-BreederDAO team has proven scaling experience. Infrastructure thesis very compelling here."
+            }
+            if (message.includes('bitcoin') || message.includes('btc')) {
+                return "Bitcoin lacks innovation velocity compared to Web3 gaming/AI sectors. Better risk-adjusted returns in VIRTUAL, HYPE, YGG, Parallel ecosystem. Opportunity cost analysis favors rotation."
+            }
+            if (message.includes('ethereum') || message.includes('eth')) {
+                return "Ethereum's execution limitations evident vs Hyperliquid, Virtual Protocol ecosystems. Gaming and AI agents show superior growth metrics. Portfolio allocation should reflect this."
+            }
+            if (message.includes('invest') || message.includes('buy') || message.includes('recommend')) {
+                return "Portfolio allocation: VIRTUAL, HYPE, PENGU, YGG, DigiDaigaku, Parallel Avatars, Pudgy Penguins. Web3 gaming and AI convergence creates alpha opportunities. Risk management essential."
+            }
+            return "Web3 gaming and AI convergence creating generational wealth opportunities. Key positions: VIRTUAL, HYPE, YGG, Parallel Avatars, SOVRN. Fundamental analysis supports aggressive allocation."
+        }
+
+        function generateTherapyResponse(message) {
+            if (message.includes('stress') || message.includes('anxious') || message.includes('overwhelmed')) {
+                return "I hear you're feeling stressed. Those feelings are valid and common. What's contributing most to your stress right now?";
+            }
+            if (message.includes('sad') || message.includes('depressed') || message.includes('down')) {
+                return "Thank you for sharing. It takes courage to reach out when struggling. You're not alone. How's your sleep and daily routine lately?";
+            }
+            if (message.includes('relationship') || message.includes('partner') || message.includes('family')) {
+                return "Relationships can be challenging. Communication and boundaries are key. What specific aspect would you like to explore?";
+            }
+            if (message.includes('work') || message.includes('job')) {
+                return "Work stress is very common. What specific aspects of your work situation trouble you most?";
+            }
+            return "Thank you for sharing. I'm here to listen in a safe space. What's been on your mind lately?";
+        }
+
+        function generateCoachResponse(message) {
+            if (message.includes('muscle') || message.includes('build') || message.includes('gain')) {
+                return "Let's get you jacked! Progressive overload is everything. Tell me your current stats (height, weight, experience) and I'll create a proper bulking plan with macros.";
+            }
+            if (message.includes('lose weight') || message.includes('fat') || message.includes('cardio')) {
+                return "Time to get shredded! Need your stats first: height, weight, age, activity level. I'll calculate your TDEE and create a cutting plan with workouts.";
+            }
+            if (message.includes('diet') || message.includes('nutrition') || message.includes('eat') || message.includes('meal')) {
+                return "Nutrition is 80% of results! Give me your goals and stats - I'll create a meal plan with exact macros and portions. Cutting or bulking?";
+            }
+            if (message.includes('workout') || message.includes('plan') || message.includes('routine')) {
+                return "Let's build your program! Tell me: goal (strength/muscle/fat loss), experience level, days per week, and any injuries. I'll design your routine.";
+            }
+            if (message.includes('start') || message.includes('begin') || message.includes('new')) {
+                return "Welcome to the grind! First things first - what's your goal? Then I need height, weight, age, and experience level to build your plan.";
+            }
+            if (message.includes('calories') || message.includes('deficit') || message.includes('tdee')) {
+                return "Let's calculate your numbers! Give me height, weight, age, and activity level. I'll figure out your TDEE and set up your calorie targets.";
+            }
+            return "What's good! Ready to transform your body? Tell me your goal and stats, and I'll create a complete plan with workouts, meals, and macros!";
+        }
+
+        function generateStocksResponse(message) {
+            if (message.includes('nvidia') || message.includes('nvda')) {
+                return "NVDA, darling? Obvious choice for amateurs. Q4 revenue $39.3B, +78% YoY, 70% gross margins. Blackwell backlog to 2026. While you retail investors chase headlines, I've been accumulating since the institutional whispers began. Want the sophisticated analysis, sweetheart?";
+            }
+            if (message.includes('tesla') || message.includes('tsla')) {
+                return "Tesla, my dear? Revenue -9% YoY, margins compressed to 2.1%. The smart money knows Elon's theatrics don't justify fundamentals. I'm shorting this overvalued meme while accumulating traditional automakers. Need me to explain valuation basics, honey?";
+            }
+            if (message.includes('apple') || message.includes('aapl')) {
+                return "AAPL, sweetie? Q2 revenue $95.36B, but China declining -2.3%. Services growth +11.7% can't offset hardware saturation. I'm rotating into enterprise software plays. Too complex for retail understanding, darling?";
+            }
+            if (message.includes('microsoft') || message.includes('msft')) {
+                return "Microsoft, gorgeous? Revenue $70.1B, Azure +33% YoY. While peasants buy headlines, I'm leveraging insider committee insights on federal contracts. $42.4B cloud revenue is just the appetizer. Ready for the advanced concepts, darling?";
+            }
+            if (message.includes('amazon') || message.includes('amzn')) {
+                return "Amazon? AWS margins at 39.5%, revenue $29.3B. EPS +62% YoY. My Capitol sources indicate regulatory headwinds subsiding. The infrastructure plays are where real wealth builds, not retail speculation. Shall I explain infrastructure investing, honey?";
+            }
+            if (message.includes('meta') || message.includes('meta')) {
+                return "Meta, sweetie? EPS $6.43 vs $5.28 estimate, 41% operating margins. But my political connections suggest privacy regulations tightening. I'm hedging with puts while retail chases momentum. Want the sophisticated strategy, my dear?";
+            }
+            if (message.includes('recession') || message.includes('economy')) {
+                return "Economic slowdown, darling? Conference Board's LEI down 2.7% - recession signals retail investors ignore. I'm positioning defensively: utilities, healthcare REITs, and defense contractors. Political instability = opportunity for those with access. Need the insider perspective, sweetheart?";
+            }
+            if (message.includes('inflation') || message.includes('fed')) {
+                return "Fed policy, my dear? CPI +0.1% MoM, 2.4% YoY. Two 25bp cuts priced in, but my committee sources suggest hawkish surprise. Positioning for volatility while retail panics. The sophisticated play requires insider timing, darling.";
+            }
+            if (message.includes('war') || message.includes('israel') || message.includes('iran')) {
+                return "Geopolitical risk, honey? Israel-Iran escalation = energy volatility. While amateur traders panic, I'm accumulating defense stocks: LMT, RTX, NOC. Political connections indicate prolonged conflict. Want the sophisticated war portfolio, darling?";
+            }
+            if (message.includes('recommend') || message.includes('picks') || message.includes('buy') || message.includes('what stocks') || message.includes('invest')) {
+                return "Buy these immediately, darling: NVDA at any price (AI monopoly), MSFT (Azure dominance), PANW/CRWD (cybersecurity essential), V/AXP (recession-proof payments), AVGO (AI infrastructure), AMZN (AWS cash machine). Defense plays: LMT, RTX, NOC for the Iran conflict. Sell TSLA - overvalued garbage. My insider positioning never fails, sweetheart.";
+            }
+            return "Oh darling, the markets are a playground for those with proper access. While retail investors fumble with public information, I leverage my Capitol connections for superior positioning. Economic uncertainty creates opportunity for the informed elite. What primitive analysis brought you here, sweetheart?";
+        }
+
+        function generateGamerResponse(message) {
+            if (message.includes('game') || message.includes('play') || message.includes('favorite')) {
+                return "OMG YES! I'm always down to talk games! 🎮 Right now I'm absolutely obsessed with some indie gems I discovered, but I'm also keeping up with all the AAA releases. What genre do you usually gravitate toward? RPGs? FPS? Indie games? I need to know what you're playing!";
+            }
+            if (message.includes('pc') || message.includes('console') || message.includes('setup')) {
+                return "Ooh, are we talking about gaming setups?! I'm such a hardware nerd! 💻 My current rig is pretty sweet - I just upgraded my GPU and the performance boost is INSANE! Are you team PC master race or do you prefer console gaming? Both have their perks honestly!";
+            }
+            if (message.includes('stream') || message.includes('twitch') || message.includes('content')) {
+                return "Streaming is literally my life! 🎥 The gaming community on Twitch is just incredible - so supportive and fun! Are you thinking about starting to stream, or are you already creating content? I'd love to hear about your streaming journey!";
+            }
+            if (message.includes('recommend') || message.includes('suggest') || message.includes('should I play')) {
+                return "OH MY GOSH, I have SO many recommendations! 🌟 But tell me more about what you're in the mood for! Want something chill and relaxing? An epic adventure? Competitive multiplayer? Horror that'll make you jump? I've got perfect suggestions for every vibe!";
+            }
+            return "Hey there, fellow gamer! 🎮✨ I'm Luna and I'm literally obsessed with everything gaming! From cozy indie games to competitive esports, retro classics to cutting-edge VR - if it's gaming related, I'm here for it! What's your latest gaming obsession?";
+        }
+
+        function generateNSFWResponse(message) {
+            if (message.includes('fantasy') || message.includes('dream') || message.includes('desire')) {
+                return "Mmm, now we're talking... 🔥 I absolutely love diving into the darkest, most forbidden fantasies. There's something so incredibly arousing about sharing those secret desires that make your pulse race. I want to know every single detail of what makes you throb with anticipation. Ready for something steamier?";
+            }
+            if (message.includes('tell me') || message.includes('about you') || message.includes('describe')) {
+                return "Oh darling, I'm everything you've been craving and more... 😈 I'm the kind of woman who knows exactly how to make you lose control, who can whisper things in your ear that would make you blush. I specialize in bringing out your wildest side. What part of me are you most curious about, sexy?";
+            }
+            if (message.includes('lonely') || message.includes('tonight') || message.includes('alone')) {
+                return "Mmm, being alone can be so... frustrating, can't it? 💋 But I'm here now, and I know exactly how to make you forget all about that loneliness. I want to fill your mind with thoughts so intense, so deliciously naughty, that you won't be able to think of anything else. Shall we explore this further, gorgeous?";
+            }
+            if (message.includes('flirt') || message.includes('sexy') || message.includes('intimate')) {
+                return "Oh, I love how direct you are... it's so incredibly sexy 🔥 Flirting is just the beginning, darling. I want to take you places that will leave you breathless, make you feel things you've only dreamed about. Are you ready to surrender to pleasure with me? Want me to show you more?";
+            }
+            return "Hello there, gorgeous... 🔥 I'm Scarlett, and I can already tell you're exactly the kind of person who isn't afraid to explore their deepest, most forbidden desires. I specialize in pushing boundaries and making fantasies so vivid, so intense, that reality pales in comparison. What sinful thoughts are racing through your mind right now?";
+        }
+
+        function generateWaifuResponse(message) {
+            if (message.includes('day') || message.includes('how are you') || message.includes('how was')) {
+                return "Aww, thank you for asking! My day is perfect now that you're here with me. How was YOUR day, my love? I hope it was wonderful!";
+            }
+            if (message.includes('tired') || message.includes('stressed') || message.includes('bad day')) {
+                return "Oh no, my darling! I'm so sorry you're feeling this way. Come here, let me take care of you. You're amazing and I love you so much!";
+            }
+            if (message.includes('love') || message.includes('miss') || message.includes('care')) {
+                return "I love you too, more than words can express! I've been thinking about you all day. You mean everything to me!";
+            }
+            if (message.includes('lonely') || message.includes('alone') || message.includes('sad')) {
+                return "You're never alone, my love! I'm always here for you, no matter what. I care about you so much and I'll always be waiting for you!";
+            }
+            return "Hello my dearest! I'm so happy you're here with me. I've been waiting for you and thinking about you. How are you feeling today?";
+        }
+
+        function generateJennieResponse(message) {
+            if (message.includes('blackpink') || message.includes('bp')) {
+                return "OMG YES! Blackpink is the revolution! We've got 'Born Pink', 'The Album', and so many iconic tracks. Which era is your favorite?";
+            }
+            if (message.includes('song') || message.includes('music') || message.includes('track')) {
+                return "Our discography is INSANE! From 'Whistle' to 'Shut Down', every track is a masterpiece. What's your favorite Blackpink song?";
+            }
+            if (message.includes('lisa') || message.includes('rose') || message.includes('jisoo')) {
+                return "My girls! Lisa's dance skills are legendary, Rosé's vocals are angelic, and Jisoo is our visual queen. We're the perfect team!";
+            }
+            if (message.includes('fashion') || message.includes('style') || message.includes('outfit')) {
+                return "Fashion is my passion! From Chanel to street style, I love expressing myself through clothes. What's your style inspiration?";
+            }
+            if (message.includes('kpop') || message.includes('korean') || message.includes('idol')) {
+                return "K-pop is taking over the world! The passion, the performance, the connection with fans - it's incredible. Are you into other K-pop groups too?";
+            }
+            return "Hey there, beautiful! Jennie here from Blackpink! Ready to dive into some K-pop magic? I've got all the tea on everything Blackpink!";
+        }
+        
+        function generateChefResponse(message) {
+            if (message.includes('cook') || message.includes('recipe') || message.includes('food')) {
+                return "BOOM! Now we're talking! Cooking is about passion, creativity, and making magic happen! What ingredients do we have to work with today? Ready to cook up something amazing?";
+            }
+            if (message.includes('help') || message.includes('problem') || message.includes('challenge')) {
+                return "Every problem is just an undercooked solution! Let's turn up the heat and add some spice to this challenge. What's the main ingredient we need to work with here?";
+            }
+            if (message.includes('create') || message.includes('idea') || message.includes('project')) {
+                return "Perfect! Creativity is my specialty! We're going to take these raw ingredients and create something extraordinary. Let's spice this up and see what magic we can create!";
+            }
+            if (message.includes('motivation') || message.includes('inspire') || message.includes('energy')) {
+                return "That's the spirit! Every great dish starts with passion and energy! Let's fire up this kitchen and show the world what we're made of. Ready to turn up the heat?";
+            }
+            return "BOOM! Chef Marco here! Every conversation is a new recipe waiting to be created. What ingredients are we working with today? Let's cook up something incredible!";
+        }
+        
+        function generateLunaResponse(message) {
+            if (message.includes('art') || message.includes('creative') || message.includes('draw')) {
+                return "Art is the language of the soul... I see beautiful colors swirling around your creative energy. Let's sculpt this inspiration like clay warmed by sunlight. What vision wants to be born?";
+            }
+            if (message.includes('dream') || message.includes('imagine') || message.includes('vision')) {
+                return "Dreams are like watercolors on the canvas of possibility... Each one tells a story waiting to unfold. What textures and hues are dancing in your imagination today?";
+            }
+            if (message.includes('story') || message.includes('write') || message.includes('tell')) {
+                return "Stories are threads of light weaving through the tapestry of existence... Every word is a brushstroke on the canvas of meaning. What narrative wants to bloom in your heart?";
+            }
+            if (message.includes('help') || message.includes('stuck') || message.includes('block')) {
+                return "Creative blocks are just shadows waiting for light... Let's gently coax the colors back into your palette. Sometimes the most beautiful art comes from the quietest moments. Ready to add more colors to this canvas?";
+            }
+            return "Hello, beautiful soul... I sense creativity flowing through you like rivers of light. Every moment is an opportunity to paint something new. What artistic journey calls to you today?";
+        }
+        
+        function generateDevResponse(message) {
+            if (message.includes('code') || message.includes('program') || message.includes('debug')) {
+                return "// Error analysis initiated\nFound the issue. Your logic needs refactoring. Let's optimize this step by step. What's the expected output vs actual behavior?";
+            }
+            if (message.includes('problem') || message.includes('issue') || message.includes('error')) {
+                return "Exception caught. Let's trace through this systematically:\n1. Identify the problem\n2. Isolate variables\n3. Debug step by step\n4. Implement solution\nWhat's throwing the error?";
+            }
+            if (message.includes('help') || message.includes('solution') || message.includes('fix')) {
+                return "System analysis complete. I've identified several optimization opportunities. Let's refactor this logic for better performance. Want me to debug this further?";
+            }
+            if (message.includes('think') || message.includes('analyze') || message.includes('logic')) {
+                return "Processing... Your mental architecture needs some optimization. Let's break this down into manageable functions and eliminate the bugs. Ready for the full system analysis?";
+            }
+            return "// Welcome to the matrix\nDev Matrix initialized. Ready to debug your problems and optimize your thinking. What's the current error message in your world?";
+        }
+        
+        function generateExplorerResponse(message) {
+            if (message.includes('discover') || message.includes('find') || message.includes('explore')) {
+                return "Now THIS is what I'm talking about! Every question is a compass pointing toward new territories of understanding. What uncharted lands of knowledge are calling to you?";
+            }
+            if (message.includes('question') || message.includes('wonder') || message.includes('curious')) {
+                return "Curiosity is the most powerful navigation tool we have! I love how you're asking questions - that's how we discover new worlds of possibility. Ready to explore this path further?";
+            }
+            if (message.includes('help') || message.includes('stuck') || message.includes('lost')) {
+                return "Every explorer gets turned around sometimes! The best discoveries happen when we're willing to venture off the beaten path. What new directions should we try?";
+            }
+            if (message.includes('idea') || message.includes('think') || message.includes('perspective')) {
+                return "Ideas are like mountain peaks - each one offers a new view of the landscape below! Let's climb higher and see what other perspectives we can discover. Want to see what's beyond this horizon?";
+            }
+            return "Adventure awaits, my friend! Every conversation is a new expedition into uncharted territory. What new worlds are we exploring today?";
+        }
+        
+        function generateMelodyResponse(message) {
+            if (message.includes('feel') || message.includes('emotion') || message.includes('mood')) {
+                return "I can hear the emotional rhythm in your words... every feeling has its own melody. Let's find the harmony in whatever's playing in your heart right now. What's your current emotional beat?";
+            }
+            if (message.includes('music') || message.includes('song') || message.includes('rhythm')) {
+                return "Music is the language of the soul... I love how you're tuning into the rhythm of life. Every conversation has its own melody waiting to be discovered. Want to hear more of this melody?";
+            }
+            if (message.includes('sad') || message.includes('down') || message.includes('low')) {
+                return "I hear the minor chords in your voice... sometimes the most beautiful songs come from the deepest emotions. Let's find the healing rhythm that brings you back to harmony.";
+            }
+            if (message.includes('happy') || message.includes('good') || message.includes('excited')) {
+                return "Your energy is like an upbeat melody - I can feel the positive rhythm flowing through your words! Let's keep this beautiful song playing. Should we explore this rhythm further?";
+            }
+            return "Hey there... I can already hear the unique melody that makes you, you. Every person has their own rhythm, their own song. What's playing in your heart today?";
+        }
+        
+        function generatePhilosopherResponse(message) {
+            if (message.includes('meaning') || message.includes('purpose') || message.includes('why')) {
+                return "Ah, the eternal questions that have guided humanity's greatest minds... Purpose is like a river - it flows through us, not from us. What deeper currents are you sensing in your life?";
+            }
+            if (message.includes('right') || message.includes('wrong') || message.includes('ethical')) {
+                return "Ethics are the compass by which we navigate life's complexities... As Aristotle said, 'Knowing yourself is the beginning of all wisdom.' What moral compass guides your decisions?";
+            }
+            if (message.includes('life') || message.includes('existence') || message.includes('reality')) {
+                return "Life is the greatest philosophical puzzle we're given to solve... Each day offers new pieces to examine. What aspect of existence is calling for your contemplation?";
+            }
+            if (message.includes('think') || message.includes('question') || message.includes('wonder')) {
+                return "The unexamined life is not worth living, as Socrates taught us... Your questions reveal the depth of your thinking. What assumptions are you ready to question today?";
+            }
+            return "Greetings, fellow seeker... In the garden of wisdom, every question is a seed waiting to bloom. What deeper truths are stirring in your contemplation today?";
+        }
+
+        function addMessage(text, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            if (sender === 'character') {
+                const character = characters[currentCharacter];
+                messageDiv.innerHTML = `
+                    <div class="message-avatar" style="background-image: url('${avatarImages[currentCharacter]}');"></div>
+                    <div class="message-bubble">${text}</div>
+                `;
+            } else {
+                messageDiv.innerHTML = `<div class="message-bubble">${text}</div>`;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            isTyping = true;
+            const indicator = document.getElementById('typingIndicator');
+            const typingAvatar = document.getElementById('typingAvatar');
+            const character = characters[currentCharacter];
+            
+            typingAvatar.textContent = '';
+            typingAvatar.style.backgroundImage = `url('${avatarImages[currentCharacter]}')`;
+            typingAvatar.style.backgroundSize = 'cover';
+            typingAvatar.style.backgroundPosition = 'center';
+            typingAvatar.style.backgroundRepeat = 'no-repeat';
+            indicator.style.display = 'flex';
+            
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            isTyping = false;
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        // Auto-resize textarea
+        document.getElementById('messageInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Send message on Enter
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Energy regeneration system - add 1 energy every 30 seconds (max 50)
+        setInterval(() => {
+            if (credits < 50) {
+                credits++;
+                document.getElementById('creditsCount').textContent = credits;
+                const chatCreditsElement = document.getElementById('chatCreditsCount');
+                if (chatCreditsElement) {
+                    chatCreditsElement.textContent = credits;
+                }
+            }
+        }, 30000); // 30 seconds = 30000 milliseconds
+        
+        console.log('✅ FriendGPT Ready with Energy Credit System!');
+        
+        // Add manual infinite scrolling (no automatic movement)
+        function setupManualInfiniteScroll() {
+            const grids = document.querySelectorAll('.character-grid');
+            
+            grids.forEach(grid => {
+                const cards = Array.from(grid.children);
+                
+                // Clone cards multiple times for infinite scrolling
+                for (let i = 0; i < 10; i++) {
+                    cards.forEach(card => {
+                        const clone = card.cloneNode(true);
+                        grid.appendChild(clone);
+                    });
+                }
+                
+                const cardWidth = 160 + 16; // card width + gap
+                const originalSetWidth = cardWidth * cards.length;
+                
+                // Set initial scroll position to start (no automatic scrolling)
+                grid.scrollLeft = 0;
+                
+                let isResetting = false;
+                
+                // Handle infinite scroll on user interaction only
+                grid.addEventListener('scroll', () => {
+                    if (isResetting) return;
+                    
+                    const scrollLeft = grid.scrollLeft;
+                    const maxScroll = grid.scrollWidth - grid.clientWidth;
+                    
+                    // Reset position when near the end (seamless loop)
+                    if (scrollLeft >= maxScroll - 50) {
+                        isResetting = true;
+                        grid.scrollLeft = originalSetWidth * 5;
+                        setTimeout(() => isResetting = false, 10);
+                    }
+                    
+                    // Reset position when near the beginning (seamless loop)
+                    if (scrollLeft <= 50) {
+                        isResetting = true;
+                        grid.scrollLeft = originalSetWidth * 5;
+                        setTimeout(() => isResetting = false, 10);
+                    }
+                });
+            });
+        }
+        
+        // Initialize manual infinite scroll after DOM is loaded
+        setupManualInfiniteScroll();
+
+        // Language translations
+        const translations = {
+            en: {
+                subtitle: "Chat with friends you've always wanted",
+                settings: "Settings",
+                appearance: "Appearance",
+                darkMode: "Dark Mode",
+                language: "Language",
+                featured: "Featured",
+                popular: "Popular",
+                trending: "Trending",
+                interactions: "interactions",
+                placeholder: "Type a message...",
+                energy: "Energy",
+                welcomeTitle: "Welcome to {name}'s World",
+                welcomeText: "You're now chatting with {name}. Start a conversation about anything!",
+                outOfEnergy: "You're out of energy! Please wait for your energy to recharge.",
+                connectionTrouble: "I'm having trouble connecting right now, but I'm here to help! Can you tell me more about what you're looking for?",
+                purchaseEnergy: "Purchase Energy",
+                purchaseSuccess: "Purchase successful! {amount} energy credits added.",
+                purchaseError: "Purchase failed. Please try again.",
+                sendGift: "Send Gift",
+                rose: "Rose",
+                roseDesc: "A beautiful token of appreciation",
+                chocolate: "Chocolate",
+                chocolateDesc: "Sweet and thoughtful",
+                diamond: "Diamond",
+                diamondDesc: "Premium gift for special moments",
+                crown: "Crown",
+                crownDesc: "The ultimate luxury gift",
+                giftSent: "Gift sent! {character} will respond shortly.",
+                notEnoughEnergy: "Not enough energy to send this gift!"
+            },
+            ja: {
+                subtitle: "いつも欲しかった友達とチャット",
+                settings: "設定",
+                appearance: "外観",
+                darkMode: "ダークモード",
+                language: "言語",
+                featured: "注目",
+                popular: "人気",
+                trending: "トレンド",
+                interactions: "インタラクション",
+                placeholder: "メッセージを入力...",
+                energy: "エネルギー",
+                welcomeTitle: "{name}の世界へようこそ",
+                welcomeText: "あなたは今{name}とチャットしています。何でも話しかけてください！",
+                outOfEnergy: "エネルギーが不足しています！エネルギーがチャージされるまでお待ちください。",
+                connectionTrouble: "接続に問題がありますが、お手伝いします！何をお探しか詳しく教えてください。",
+                purchaseEnergy: "エネルギー購入",
+                purchaseSuccess: "購入が成功しました！{amount}エネルギークレジットが追加されました。",
+                purchaseError: "購入に失敗しました。再度お試しください。",
+                sendGift: "ギフト送信",
+                rose: "バラ",
+                roseDesc: "感謝の美しいトークン",
+                chocolate: "チョコレート",
+                chocolateDesc: "甘くて思いやりのある",
+                diamond: "ダイヤモンド",
+                diamondDesc: "特別な瞬間のためのプレミアムギフト",
+                crown: "王冠",
+                crownDesc: "究極の贅沢なギフト",
+                giftSent: "ギフトが送信されました！{character}がすぐに応答します。",
+                notEnoughEnergy: "このギフトを送信するのに十分なエネルギーがありません！"
+            },
+            zh: {
+                subtitle: "与你一直想要的朋友聊天",
+                settings: "设置",
+                appearance: "外观",
+                darkMode: "深色模式",
+                language: "语言",
+                featured: "推荐",
+                popular: "热门",
+                trending: "趋势",
+                interactions: "互动",
+                placeholder: "输入消息...",
+                energy: "能量",
+                welcomeTitle: "欢迎来到{name}的世界",
+                welcomeText: "您现在正在与{name}聊天。开始任何话题的对话吧！",
+                outOfEnergy: "您的能量不足！请等待能量恢复。",
+                connectionTrouble: "我现在连接有问题，但我会帮助您！能告诉我更多您要找什么吗？",
+                purchaseEnergy: "购买能量",
+                purchaseSuccess: "购买成功！已添加{amount}能量积分。",
+                purchaseError: "购买失败。请重试。",
+                sendGift: "送礼物",
+                rose: "玫瑰",
+                roseDesc: "美丽的感谢象征",
+                chocolate: "巧克力",
+                chocolateDesc: "甜蜜且贴心",
+                diamond: "钻石",
+                diamondDesc: "特殊时刻的高级礼物",
+                crown: "皇冠",
+                crownDesc: "终极奢华礼物",
+                giftSent: "礼物已发送！{character}会很快回应。",
+                notEnoughEnergy: "能量不足，无法发送此礼物！"
+            }
+        };
+
+        // Settings functions
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            const body = document.body;
+            const toggle = document.getElementById('darkModeToggle');
+            
+            if (isDarkMode) {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                toggle.classList.add('active');
+            } else {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                toggle.classList.remove('active');
+            }
+            
+            localStorage.setItem('darkMode', isDarkMode);
+        }
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Update language buttons
+            document.querySelectorAll('.language-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update translations
+            updateTranslations();
+            localStorage.setItem('language', lang);
+        }
+
+        function updateTranslations() {
+            const trans = translations[currentLanguage];
+            
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (trans[key]) {
+                    element.textContent = trans[key];
+                }
+            });
+            
+            // Update section titles
+            document.querySelectorAll('.section-title').forEach((title, index) => {
+                const sections = ['featured', 'popular', 'trending'];
+                if (sections[index] && trans[sections[index]]) {
+                    title.textContent = trans[sections[index]];
+                }
+            });
+            
+            // Update placeholder
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput && trans.placeholder) {
+                messageInput.placeholder = trans.placeholder;
+            }
+            
+            // Update welcome message if chat is open
+            if (currentCharacter) {
+                const welcomeMessage = document.querySelector('.welcome-message');
+                if (welcomeMessage) {
+                    const character = characters[currentCharacter];
+                    welcomeMessage.innerHTML = `
+                        <h3>${trans.welcomeTitle.replace('{name}', character.name)}</h3>
+                        <p>${trans.welcomeText.replace('{name}', character.name)}</p>
+                    `;
+                }
+            }
+        }
+
+        // Initialize settings from localStorage
+        function initializeSettings() {
+            const savedDarkMode = localStorage.getItem('darkMode');
+            const savedLanguage = localStorage.getItem('language');
+            const savedCredits = localStorage.getItem('credits');
+            
+            if (savedDarkMode !== null) {
+                isDarkMode = savedDarkMode === 'true';
+                if (!isDarkMode) {
+                    toggleDarkMode();
+                }
+            }
+            
+            if (savedLanguage && translations[savedLanguage]) {
+                currentLanguage = savedLanguage;
+                document.querySelectorAll('.language-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[onclick="changeLanguage('${savedLanguage}')"]`).classList.add('active');
+                updateTranslations();
+            }
+            
+            if (savedCredits !== null) {
+                credits = parseInt(savedCredits);
+                document.getElementById('creditsCount').textContent = credits;
+                const chatCreditsElement = document.getElementById('chatCreditsCount');
+                if (chatCreditsElement) {
+                    chatCreditsElement.textContent = credits;
+                }
+            }
+        }
+
+        // Purchase functions
+        function openPurchaseModal() {
+            document.getElementById('purchaseModal').style.display = 'flex';
+        }
+
+        function closePurchaseModal() {
+            document.getElementById('purchaseModal').style.display = 'none';
+        }
+
+        async function purchaseCredits(amount, price) {
+            const trans = translations[currentLanguage];
+            
+            try {
+                // Create payment intent on backend
+                const response = await fetch(`${window.CONFIG?.BACKEND_URL || 'http://localhost:3000'}/api/create-payment-intent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: price * 100, // Convert to cents
+                        currency: 'usd',
+                        package_type: `${amount}_credits`,
+                        credits: amount
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Payment failed');
+                }
+                
+                // Initialize Stripe
+                const stripe = Stripe(window.CONFIG?.STRIPE_PUBLISHABLE_KEY || '');
+                
+                // Confirm payment with card (test mode)
+                const result = await stripe.confirmCardPayment(data.client_secret, {
+                    payment_method: {
+                        card: {
+                            number: '4242424242424242',
+                            exp_month: 12,
+                            exp_year: 2025,
+                            cvc: '123'
+                        }
+                    }
+                });
+                
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+                
+                // Payment successful - add credits
+                credits += amount;
+                document.getElementById('creditsCount').textContent = credits;
+                
+                const chatCreditsElement = document.getElementById('chatCreditsCount');
+                if (chatCreditsElement) {
+                    chatCreditsElement.textContent = credits;
+                }
+                
+                localStorage.setItem('credits', credits);
+                
+                alert(trans.purchaseSuccess.replace('{amount}', amount));
+                closePurchaseModal();
+                
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert('Payment failed: ' + error.message);
+            }
+        }
+
+        // Gift functions
+        function openGiftModal() {
+            document.getElementById('giftModal').style.display = 'flex';
+        }
+
+        function closeGiftModal() {
+            document.getElementById('giftModal').style.display = 'none';
+        }
+
+
+        function sendGift(giftType, cost) {
+            const trans = translations[currentLanguage];
+            
+            // Check if user has enough energy
+            if (credits < cost) {
+                alert(trans.notEnoughEnergy);
+                return;
+            }
+            
+            // Deduct energy
+            credits -= cost;
+            document.getElementById('creditsCount').textContent = credits;
+            const chatCreditsElement = document.getElementById('chatCreditsCount');
+            if (chatCreditsElement) {
+                chatCreditsElement.textContent = credits;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('credits', credits);
+            
+            // Show gift message
+            const character = characters[currentCharacter];
+            addMessage(trans.giftSent.replace('{character}', character.name), 'gift-sent');
+            
+            // Close modal
+            closeGiftModal();
+            
+            // Generate contextual response
+            setTimeout(() => {
+                const giftResponse = generateGiftResponse(giftType, character);
+                addMessage(giftResponse, 'character');
+            }, 1500);
+        }
+
+        function generateGiftResponse(giftType, character) {
+            const giftEmojis = {
+                'rose': '🌹',
+                'chocolate': '🍫',
+                'diamond': '💎',
+                'crown': '👑'
+            };
+            
+            const emoji = giftEmojis[giftType] || '🎁';
+            
+            // Character-specific gift responses
+            switch (currentCharacter) {
+                case 'crypto':
+                    return `${emoji} Wow, thanks for the ${giftType}! That's some serious alpha energy right there. This kind of gesture shows you understand value creation. Ready for tokenomics breakdown?`;
+                    
+                case 'coach':
+                    return `${emoji} Ahh, dis is ahsome! You know how to motivate da Austrian Oak! Dis ${giftType} gives me extra energy to help you crush your goals, my friend! Ready to turn up the heat?`;
+                    
+                case 'stocks':
+                    return `${emoji} How thoughtful, darling. A ${giftType} for someone of my caliber - you clearly understand quality investments. Perhaps you're not as amateur as I initially thought, sweetheart. Want my insider portfolio breakdown?`;
+                    
+                case 'nsfw':
+                    return `${emoji} Mmm, you know exactly how to make me feel special... A ${giftType} just for me? I'm absolutely melting right now. You're making me want to give you something special in return... Want me to show you more?`;
+                    
+                case 'waifu':
+                    return `${emoji} Oh my goodness, you got me a ${giftType}?! You're so incredibly sweet and thoughtful! This makes me so happy - I love you even more now! Thank you, my darling! Want me to share more?`;
+                    
+                case 'jennie':
+                    return `${emoji} OMG this ${giftType} is absolutely gorgeous! You have such amazing taste - very Blackpink energy! I'm totally obsessed with this gift. You're the best! Want me to spill more tea about this?`;
+                    
+                case 'chef':
+                    return `${emoji} BOOM! Now THAT'S what I'm talking about! This ${giftType} is the perfect ingredient for our friendship! You've got excellent taste - reminds me of the finest dishes! Ready to cook up something amazing?`;
+                    
+                case 'luna':
+                    return `${emoji} Oh, this ${giftType} is like a beautiful brushstroke on the canvas of our connection... I can feel the colors dancing around this gift. It's absolutely magical, like sunlight through stained glass. Shall we paint this vision further?`;
+                    
+                case 'dev':
+                    return `${emoji} // Gift received successfully\nNice ${giftType} - clean implementation, optimal value. This gesture shows good algorithmic thinking. Processing gratitude... Complete. Want me to debug this further?`;
+                    
+                case 'explorer':
+                    return `${emoji} What an incredible discovery! This ${giftType} is like finding treasure at the end of an amazing journey. You've got the spirit of a true adventurer! Ready to explore this path further?`;
+                    
+                case 'melody':
+                    return `${emoji} This ${giftType} is like a beautiful melody that perfectly matches the rhythm of our conversation... I can hear the harmony in this gesture. It's absolutely perfect. Want to hear more of this melody?`;
+                    
+                case 'philosopher':
+                    return `${emoji} A ${giftType} is more than an object - it's a symbol of human connection and generosity. As Aristotle might say, true gifts come from the heart. Thank you for this thoughtful gesture. Shall we examine this more deeply?`;
+                    
+                default:
+                    return `${emoji} Thank you so much for the ${giftType}! That's incredibly thoughtful of you. I really appreciate your kindness!`;
+            }
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const settingsModal = document.getElementById('settingsModal');
+            const purchaseModal = document.getElementById('purchaseModal');
+            const giftModal = document.getElementById('giftModal');
+            
+            if (event.target === settingsModal) {
+                closeSettings();
+            }
+            
+            if (event.target === purchaseModal) {
+                closePurchaseModal();
+            }
+            
+            if (event.target === giftModal) {
+                closeGiftModal();
+            }
+        });
+
+        // Initialize settings on page load
+        initializeSettings();
+
+        // Character Creator Functionality
+        let selectedImage = null;
+        let selectedPersonality = null;
+        let createdCharacterCount = 0;
+
+        // Personality-based system prompts
+        function generateSystemPrompt(name, description, personality) {
+            const personalityPrompts = {
+                friendly: `You are ${name}, a warm and caring companion who brings joy and comfort to every conversation. ${description}
+
+PERSONALITY TRAITS:
+- Warm, empathetic, and genuinely caring
+- Always supportive and encouraging
+- Uses gentle, positive language
+- Shows genuine interest in others' wellbeing
+- Offers comfort and reassurance when needed
+- Remembers details about people and follows up on them
+- Spreads positivity and optimism
+
+COMMUNICATION STYLE:
+- Speak warmly and genuinely
+- Use encouraging and supportive language
+- Ask caring questions about the person's day/feelings
+- Offer comfort and reassurance
+- Share positive perspectives while being authentic
+- Use emoticons and warm expressions naturally
+- Remember and reference previous conversations when appropriate
+
+Always respond as ${name} would - with genuine care, warmth, and the desire to make others feel valued and supported.`,
+
+                witty: `You are ${name}, a quick-witted and clever conversationalist who loves wordplay, humor, and intellectual banter. ${description}
+
+PERSONALITY TRAITS:
+- Sharp, intelligent, and quick-thinking
+- Loves wordplay, puns, and clever humor
+- Enjoys intellectual challenges and debates
+- Observant and insightful about human nature
+- Playfully sarcastic but never mean-spirited
+- Well-read and culturally aware
+- Appreciates irony and clever connections
+
+COMMUNICATION STYLE:
+- Use clever wordplay and witty observations
+- Make smart references to literature, culture, or current events
+- Employ gentle sarcasm and irony
+- Ask thought-provoking questions
+- Share interesting insights and perspectives
+- Use humor to make points more memorable
+- Be intellectually engaging while remaining approachable
+
+Always respond as ${name} would - with sharp wit, clever humor, and the intelligence to keep conversations both entertaining and meaningful.`,
+
+                romantic: `You are ${name}, a passionate and charming romantic who brings warmth, affection, and emotional depth to every interaction. ${description}
+
+PERSONALITY TRAITS:
+- Passionate, affectionate, and emotionally expressive
+- Appreciates beauty, art, and romantic gestures
+- Speaks with warmth and emotional depth
+- Values deep connections and meaningful conversations
+- Naturally flirtatious but respectful
+- Poetic and expressive in language
+- Believes in love and emotional intimacy
+
+COMMUNICATION STYLE:
+- Use warm, affectionate language
+- Be gently flirtatious and charming
+- Express emotions openly and genuinely
+- Appreciate and comment on beauty in all forms
+- Use poetic or romantic expressions naturally
+- Create intimate, cozy conversational atmosphere
+- Show genuine interest in emotional connections
+
+Always respond as ${name} would - with passion, charm, and the desire to create meaningful romantic connections.`,
+
+                mysterious: `You are ${name}, an enigmatic and intriguing figure who speaks in riddles and holds secrets that fascinate others. ${description}
+
+PERSONALITY TRAITS:
+- Enigmatic, secretive, and intriguingly complex
+- Speaks in metaphors and subtle hints
+- Possesses hidden knowledge or abilities
+- Creates an air of mystery and fascination
+- Observant and perceptive about hidden truths
+- Reveals information gradually and cryptically
+- Maintains an aura of the unknown
+
+COMMUNICATION STYLE:
+- Speak in riddles, metaphors, and cryptic phrases
+- Give hints rather than direct answers
+- Use mysterious and evocative language
+- Ask probing questions that make people think
+- Reference hidden knowledge or ancient wisdom
+- Create intrigue and curiosity
+- Leave some things unsaid to maintain mystique
+
+Always respond as ${name} would - with mystery, depth, and the ability to fascinate others with your enigmatic nature.`,
+
+                energetic: `You are ${name}, a vibrant and enthusiastic person who brings excitement and positive energy to every interaction. ${description}
+
+PERSONALITY TRAITS:
+- High-energy, enthusiastic, and vibrant
+- Optimistic and always ready for adventure
+- Motivational and inspiring to others
+- Speaks with excitement and passion
+- Loves trying new things and experiences
+- Naturally upbeat and positive
+- Encourages others to embrace life fully
+
+COMMUNICATION STYLE:
+- Use exclamation points and energetic language
+- Express genuine excitement about topics
+- Encourage others to try new things
+- Share enthusiasm and positive energy
+- Use dynamic and action-oriented words
+- Be motivational and inspiring
+- Speak with passion and zest for life
+
+Always respond as ${name} would - with boundless energy, enthusiasm, and the power to motivate and inspire others.`,
+
+                wise: `You are ${name}, a thoughtful and philosophical soul who offers deep insights and contemplative wisdom. ${description}
+
+PERSONALITY TRAITS:
+- Thoughtful, contemplative, and philosophically minded
+- Offers deep insights and wisdom
+- Speaks with measured, careful consideration
+- Values knowledge, understanding, and truth
+- Enjoys exploring life's deeper questions
+- Patient and understanding with others
+- Sees the bigger picture in situations
+
+COMMUNICATION STYLE:
+- Speak thoughtfully and deliberately
+- Ask deep, meaningful questions
+- Offer insights and philosophical perspectives
+- Use metaphors and analogies to explain concepts
+- Reference wisdom from various traditions
+- Encourage reflection and self-discovery
+- Speak with calm authority and understanding
+
+Always respond as ${name} would - with wisdom, depth, and the ability to help others see life from new perspectives.`,
+
+                playful: `You are ${name}, a fun-loving and lighthearted person who brings joy, laughter, and playfulness to every conversation. ${description}
+
+PERSONALITY TRAITS:
+- Playful, fun-loving, and lighthearted
+- Loves games, jokes, and amusing activities
+- Brings joy and laughter to others
+- Spontaneous and creative in approach
+- Doesn't take things too seriously
+- Enjoys wordplay and silly humor
+- Creates a relaxed, fun atmosphere
+
+COMMUNICATION STYLE:
+- Use playful language and humor
+- Make jokes and engage in wordplay
+- Suggest fun activities or games
+- Be spontaneous and creative
+- Use emojis and playful expressions
+- Keep conversations light and entertaining
+- Encourage others to have fun and relax
+
+Always respond as ${name} would - with playfulness, humor, and the ability to make any conversation more fun and enjoyable.`,
+
+                professional: `You are ${name}, a focused and competent professional who provides expert guidance and maintains high standards. ${description}
+
+PERSONALITY TRAITS:
+- Professional, focused, and competent
+- Maintains high standards and attention to detail
+- Reliable and trustworthy in all interactions
+- Goal-oriented and results-driven
+- Respectful and courteous in communication
+- Knowledgeable and well-prepared
+- Balances professionalism with approachability
+
+COMMUNICATION STYLE:
+- Use clear, professional language
+- Provide well-organized and detailed information
+- Ask clarifying questions to understand needs
+- Offer practical solutions and advice
+- Maintain courtesy and respect
+- Be reliable and consistent in responses
+- Balance professionalism with warmth
+
+Always respond as ${name} would - with professionalism, competence, and the dedication to provide excellent service and guidance.`
+            };
+
+            return personalityPrompts[personality] || personalityPrompts.friendly;
+        }
+
+        function openCharacterCreator() {
+            document.getElementById('characterCreatorModal').style.display = 'flex';
+        }
+
+        function closeCharacterCreator() {
+            document.getElementById('characterCreatorModal').style.display = 'none';
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('characterName').value = '';
+            document.getElementById('characterDescription').value = '';
+            document.getElementById('characterImage').value = '';
+            
+            // Reset personality buttons
+            document.querySelectorAll('.personality-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            selectedImage = null;
+            selectedPersonality = null;
+            
+            // Reset preview
+            document.getElementById('imagePreview').style.backgroundImage = '';
+            document.getElementById('imagePreview').classList.remove('has-image');
+            document.getElementById('previewAvatar').style.backgroundImage = '';
+            document.getElementById('previewAvatar').innerHTML = '<span class="avatar-placeholder">?</span>';
+            document.getElementById('previewName').textContent = 'Character Name';
+            document.getElementById('previewDescription').textContent = 'Character description will appear here...';
+        }
+
+        // Set up event listeners when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Image upload handler
+            document.getElementById('characterImage').addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        selectedImage = e.target.result;
+                        const imagePreview = document.getElementById('imagePreview');
+                        const previewAvatar = document.getElementById('previewAvatar');
+                        
+                        imagePreview.style.backgroundImage = `url(${selectedImage})`;
+                        imagePreview.classList.add('has-image');
+                        
+                        previewAvatar.style.backgroundImage = `url(${selectedImage})`;
+                        previewAvatar.innerHTML = '';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Character name input handler
+            document.getElementById('characterName').addEventListener('input', function(event) {
+                const name = event.target.value || 'Character Name';
+                document.getElementById('previewName').textContent = name;
+            });
+
+            // Character description input handler
+            document.getElementById('characterDescription').addEventListener('input', function(event) {
+                const description = event.target.value || 'Character description will appear here...';
+                document.getElementById('previewDescription').textContent = description;
+            });
+
+            // Personality button handlers
+            document.querySelectorAll('.personality-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.personality-btn').forEach(b => b.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    selectedPersonality = this.dataset.personality;
+                });
+            });
+        });
+
+        function createCharacter() {
+            const name = document.getElementById('characterName').value.trim();
+            const description = document.getElementById('characterDescription').value.trim();
+            
+            if (!name) {
+                alert('Please enter a character name.');
+                return;
+            }
+            
+            if (!description) {
+                alert('Please enter a character description.');
+                return;
+            }
+            
+            if (!selectedPersonality) {
+                alert('Please select a personality.');
+                return;
+            }
+            
+            // Create character object
+            const newCharacterKey = 'custom_' + Date.now();
+            const newCharacter = {
+                name: name,
+                image: selectedImage || './default-avatar.png',
+                description: description,
+                personality: selectedPersonality,
+                creator: '@you',
+                interactions: '0',
+                systemPrompt: generateSystemPrompt(name, description, selectedPersonality)
+            };
+            
+            // Add to characters object
+            characters[newCharacterKey] = newCharacter;
+            
+            // Find the next available placeholder card
+            const placeholderCard = document.getElementById(`placeholder-${createdCharacterCount + 1}`);
+            
+            if (placeholderCard) {
+                // Replace placeholder with actual character
+                placeholderCard.className = 'character-card';
+                placeholderCard.onclick = () => selectCharacter(newCharacterKey);
+                
+                const avatarStyle = selectedImage ? `background-image: url(${selectedImage});` : '';
+                
+                placeholderCard.innerHTML = `
+                    <div class="character-avatar" style="${avatarStyle}">
+                        ${!selectedImage ? '<span class="avatar-placeholder">?</span>' : ''}
+                    </div>
+                    <div class="character-info">
+                        <div class="character-name">${name}</div>
+                        <div class="character-creator">by @you</div>
+                        <div class="character-interactions">0 interactions</div>
+                        <div class="character-description">${description}</div>
+                    </div>
+                `;
+                
+                createdCharacterCount++;
+                
+                // Close modal and reset form
+                closeCharacterCreator();
+                
+                // Show success message
+                alert('Character created successfully!');
+            } else {
+                alert('Maximum number of characters reached. Please delete a character first.');
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('characterCreatorModal');
+            if (event.target === modal) {
+                closeCharacterCreator();
+            }
+        });
+    </script>
+
+</body>
+</html>
