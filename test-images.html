@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Path Test</title>
+    <style>
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .test-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .test-box {
+            border: 2px solid #444;
+            padding: 15px;
+            text-align: center;
+        }
+        .test-image {
+            width: 150px;
+            height: 150px;
+            margin: 10px auto;
+            border: 2px solid #666;
+        }
+        .bg-image {
+            background-size: cover;
+            background-position: center;
+        }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .success { border-color: #4CAF50; }
+        .failed { border-color: #f44336; }
+        h2 { color: #2196F3; }
+    </style>
+</head>
+<body>
+    <h1>Vercel Image Loading Test</h1>
+    <p>Testing different path formats to see what works on Vercel</p>
+
+    <h2>Test 1: No Prefix (Recommended)</h2>
+    <div class="test-container">
+        <div class="test-box">
+            <h3>Background Image</h3>
+            <div class="test-image bg-image" style="background-image: url('FriendGPT-3.jpg');"></div>
+            <code>url('FriendGPT-3.jpg')</code>
+        </div>
+        <div class="test-box">
+            <h3>IMG Tag</h3>
+            <div class="test-image">
+                <img src="FriendGPT-3.jpg" alt="Test" onload="this.parentElement.classList.add('success')" onerror="this.parentElement.classList.add('failed')">
+            </div>
+            <code>src="FriendGPT-3.jpg"</code>
+        </div>
+        <div class="test-box">
+            <h3>Different Image</h3>
+            <div class="test-image">
+                <img src="naincy-pelosi.jpg" alt="Test" onload="this.parentElement.classList.add('success')" onerror="this.parentElement.classList.add('failed')">
+            </div>
+            <code>src="naincy-pelosi.jpg"</code>
+        </div>
+    </div>
+
+    <h2>Test 2: With ./ Prefix</h2>
+    <div class="test-container">
+        <div class="test-box">
+            <h3>Background Image</h3>
+            <div class="test-image bg-image" style="background-image: url('./jennieGPT.jpg');"></div>
+            <code>url('./jennieGPT.jpg')</code>
+        </div>
+        <div class="test-box">
+            <h3>IMG Tag</h3>
+            <div class="test-image">
+                <img src="./jennieGPT.jpg" alt="Test" onload="this.parentElement.classList.add('success')" onerror="this.parentElement.classList.add('failed')">
+            </div>
+            <code>src="./jennieGPT.jpg"</code>
+        </div>
+    </div>
+
+    <h2>Test 3: With / Prefix (Absolute)</h2>
+    <div class="test-container">
+        <div class="test-box">
+            <h3>Background Image</h3>
+            <div class="test-image bg-image" style="background-image: url('/scarlett.png');"></div>
+            <code>url('/scarlett.png')</code>
+        </div>
+        <div class="test-box">
+            <h3>IMG Tag</h3>
+            <div class="test-image">
+                <img src="/scarlett.png" alt="Test" onload="this.parentElement.classList.add('success')" onerror="this.parentElement.classList.add('failed')">
+            </div>
+            <code>src="/scarlett.png"</code>
+        </div>
+    </div>
+
+    <h2>Available Files in Root</h2>
+    <pre>
+- FriendGPT-3.jpg
+- naincy-pelosi.jpg
+- jennieGPT.jpg
+- scarlett.png
+- waifu-anime.jpg
+- coacharnieGPT.jpg
+- dev-matrix.png
+- And more...
+    </pre>
+
+    <script>
+        // Log current location for debugging
+        console.log('Current URL:', window.location.href);
+        console.log('Current Path:', window.location.pathname);
+        console.log('Current Origin:', window.location.origin);
+    </script>
+</body>
+</html>
